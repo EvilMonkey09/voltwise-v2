@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Einstellungen — VoltWise Edge</title>
+<link rel="stylesheet" href="/voltwise.css">
+</head>
+<body>
+<div class="vw-edge-shell">
+    <header class="vw-edge-header">
+        <div class="vw-edge-brand">
+            <span class="vw-edge-mark">VoltWise</span>
+            <span class="vw-edge-sub">Einstellungen</span>
+        </div>
+    </header>
+
+    <div class="vw-card">
+        <div class="vw-section-title">Gerät & MQTT</div>
+        <div class="vw-form-row"><label>Anzeigename</label><input class="vw-input" id="name"></div>
+        <div class="vw-form-row"><label>MQTT-Broker</label><input class="vw-input" id="broker"></div>
+        <div class="vw-form-row"><label>MQTT-Port</label><input class="vw-input" id="port" type="number" value="1883"></div>
+        <button class="vw-btn vw-btn-primary vw-btn-sm" onclick="save()">Speichern</button>
+        <p id="msg" class="vw-edge-msg"></p>
+    </div>
+
+    <div class="vw-card">
+        <div class="vw-section-title">WLAN</div>
+        <p class="vw-muted vw-edge-hint">Hotspot starten, um das Gerät in ein neues WLAN zu bringen.</p>
+        <button type="button" class="vw-btn vw-btn-ghost vw-btn-sm" id="btn-setup">WLAN-Setup starten</button>
+        <p id="setup-msg" class="vw-edge-msg"></p>
+    </div>
+
+    <p class="vw-edge-nav"><a href="/">← Zurück zum Dashboard</a></p>
+</div>
+<script>
+async function load(){
+  const r=await fetch('/api/settings');const d=await r.json();
+  document.getElementById('name').value=d.device_name||'';
+  document.getElementById('broker').value=d.mqtt_broker||'';
+  document.getElementById('port').value=d.mqtt_port||1883;
+}
+async function save(){
+  await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    device_name:document.getElementById('name').value,
+    mqtt_broker:document.getElementById('broker').value,
+    mqtt_port:Number(document.getElementById('port').value)
+  })});
+  document.getElementById('msg').textContent='Gespeichert.';
+}
+document.getElementById('btn-setup').onclick=async()=>{
+  const msg=document.getElementById('setup-msg');
+  msg.textContent='Starte Hotspot…';
+  const r=await fetch('/api/network/setup-mode',{method:'POST'});
+  const j=await r.json();
+  if(j.ok) msg.textContent='Hotspot '+j.ap_ssid+' aktiv. Handy verbinden → http://'+(j.ip||'192.168.4.1');
+  else msg.textContent='Fehler beim Starten.';
+};
+load();
+</script>
+</body>
+</html>

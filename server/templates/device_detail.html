@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.device') }} — {{ t('browser_title') }}{% endblock %}
+{% block main_class %}vw-main vw-main-wide{% endblock %}
+{% block head_extra %}
+<script src="{{ url_for('static', filename='chart.min.js') }}"></script>
+{% endblock %}
+{% block content %}
+<div class="vw-dash-toolbar vw-device-toolbar">
+    <div class="vw-device-toolbar-left">
+        <a href="{{ url_for('index') }}" class="vw-back-link">← {{ t('device.back') }}</a>
+        <div>
+            <h1 id="device-title">{{ device_id }}</h1>
+            <p class="vw-muted" id="device-meta"></p>
+        </div>
+    </div>
+    <div class="vw-dash-detail-actions">
+        <span id="device-status"></span>
+        <a id="edge-link" class="vw-btn vw-btn-ghost vw-btn-sm hidden" href="#" target="_blank" rel="noopener">{{ t('grid.open_edge') }}</a>
+        <a id="export-link" class="vw-btn vw-btn-ghost vw-btn-sm" href="/api/devices/{{ device_id | urlencode }}/export">{{ t('device.export') }}</a>
+    </div>
+</div>
+
+<div id="sim-banner" class="vw-banner vw-banner-info hidden">{{ t('live.sim_banner') }}</div>
+<div id="offline-banner" class="vw-banner vw-banner-warn hidden">{{ t('live.offline') }}</div>
+<div id="imbalance-banner" class="vw-banner vw-banner-warn hidden"></div>
+
+<div id="device-kpis" class="vw-dash-kpis vw-device-kpis"></div>
+
+<div class="vw-device-body">
+    <section class="vw-device-panel">
+        <div class="vw-panel-head">{{ t('device.live') }}</div>
+        <table class="vw-dash-phase-table vw-device-phase-table">
+            <colgroup>
+                <col class="col-phase">
+                <col class="col-metric">
+                <col class="col-metric">
+                <col class="col-metric">
+                <col class="col-metric">
+                <col class="col-metric">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th class="col-phase">{{ t('device.phase') }}</th>
+                    <th class="col-metric">{{ t('live.voltage') }}</th>
+                    <th class="col-metric">{{ t('live.current') }}</th>
+                    <th class="col-metric">{{ t('live.power') }}</th>
+                    <th class="col-metric">{{ t('device.frequency') }}</th>
+                    <th class="col-metric">PF</th>
+                </tr>
+            </thead>
+            <tbody id="phase-body"></tbody>
+        </table>
+        <dl class="vw-device-meta-grid" id="device-sys"></dl>
+    </section>
+
+    <section class="vw-device-panel">
+        <div class="vw-panel-head">{{ t('device.trends') }}</div>
+        <div class="vw-device-trends">
+            <div class="vw-trend-panel">
+                <div class="vw-trend-label">{{ t('live.voltage') }}</div>
+                <div class="vw-trend-canvas"><canvas id="chart-v"></canvas></div>
+            </div>
+            <div class="vw-trend-panel">
+                <div class="vw-trend-label">{{ t('live.current') }}</div>
+                <div class="vw-trend-canvas"><canvas id="chart-i"></canvas></div>
+            </div>
+            <div class="vw-trend-panel">
+                <div class="vw-trend-label">{{ t('live.power') }}</div>
+                <div class="vw-trend-canvas"><canvas id="chart-p"></canvas></div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="vw-dash-fleet vw-device-history">
+    <div class="vw-panel-head">{{ t('device.history') }}</div>
+    <div class="vw-device-history-canvas"><canvas id="history-chart"></canvas></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.VW_DEVICE_ID = {{ device_id | tojson }};</script>
+<script src="{{ url_for('static', filename='js/chart_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/device_detail.js') }}"></script>
+{% endblock %}

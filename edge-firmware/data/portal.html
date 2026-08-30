@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VoltWise Setup</title>
+<link rel="stylesheet" href="/voltwise.css">
+</head>
+<body>
+<div class="vw-edge-shell">
+    <header class="vw-edge-header">
+        <div class="vw-edge-brand">
+            <span class="vw-edge-mark">VoltWise</span>
+            <span class="vw-edge-sub">Setup</span>
+        </div>
+        <span class="vw-edge-pill vw-edge-pill-setup">Hotspot aktiv</span>
+    </header>
+
+    <p class="vw-edge-lead">Verbinde diesen Stromverteiler mit deinem WLAN und MQTT-Broker.</p>
+
+    <div class="vw-card">
+        <div class="vw-section-title">Gerät</div>
+        <div class="vw-form-row"><label>Anzeigename</label><input class="vw-input" id="name" placeholder="SVT-Halle-A"></div>
+        <div class="vw-form-row"><label>MQTT-Broker</label><input class="vw-input" id="broker" placeholder="192.168.1.10"></div>
+        <div class="vw-form-row"><label>MQTT-Port</label><input class="vw-input" id="port" type="number" value="1883"></div>
+        <button class="vw-btn vw-btn-ghost vw-btn-sm" onclick="saveDevice()">Geräteeinstellungen speichern</button>
+        <p id="device-msg" class="vw-edge-msg"></p>
+    </div>
+
+    <div class="vw-card">
+        <div class="vw-section-title">WLAN verbinden</div>
+        <p class="vw-muted vw-edge-hint">Netzwerk wählen oder SSID manuell eingeben.</p>
+        <div id="networks" class="vw-network-list vw-muted">Scanne…</div>
+        <div class="vw-form-row"><label>SSID</label><input class="vw-input" id="ssid" autocomplete="off"></div>
+        <div class="vw-form-row"><label>Passwort</label><input class="vw-input" id="pass" type="password" autocomplete="off"></div>
+        <button class="vw-btn vw-btn-primary vw-btn-block" onclick="connect()">WLAN verbinden</button>
+        <p id="wifi-msg" class="vw-edge-msg"></p>
+    </div>
+
+    <p class="vw-edge-foot vw-muted" id="ap-info"></p>
+</div>
+<script>
+async function loadSettings(){
+  const r=await fetch('/api/settings');const d=await r.json();
+  document.getElementById('name').value=d.device_name||'';
+  document.getElementById('broker').value=d.mqtt_broker||'';
+  document.getElementById('port').value=d.mqtt_port||1883;
+}
+async function loadStatus(){
+  const r=await fetch('/api/network/status');const d=await r.json();
+  const ap=d.ap_ssid||'VoltWise-Setup';
+  document.getElementById('ap-info').textContent='Hotspot: '+ap+' · Gerät: http://'+(d.ip||'192.168.4.1');
+}
+async function saveDevice(){
+  await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    device_name:document.getElementById('name').value,
+    mqtt_broker:document.getElementById('broker').value,
+    mqtt_port:Number(document.getElementById('port').value)
+  })});
+  document.getElementById('device-msg').textContent='Gespeichert.';
+}
+async function scan(){
+  const r=await fetch('/api/scan');const j=await r.json();
+  const el=document.getElementById('networks');el.innerHTML='';
+  if(!(j.networks||[]).length){el.textContent='Keine Netzwerke gefunden.';return;}
+  (j.networks||[]).forEach(n=>{
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='vw-network-chip';
+    b.textContent=n.ssid+' ('+n.signal+' dBm)';
+    b.onclick=()=>{document.getElementById('ssid').value=n.ssid;document.getElementById('pass').focus();};
+    el.appendChild(b);
+  });
+}
+async function connect(){
+  const ssid=document.getElementById('ssid').value.trim();
+  const password=document.getElementById('pass').value;
+  if(!ssid){document.getElementById('wifi-msg').textContent='Bitte SSID eingeben.';return;}
+  document.getElementById('wifi-msg').textContent='Verbinde…';
+  const r=await fetch('/api/add-network',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid,password})});
+  const j=await r.json();
+  document.getElementById('wifi-msg').textContent=j.ok?'Verbunden. Hotspot wird geschlossen…':'Verbindung fehlgeschlagen. Passwort prüfen.';
+}
+loadSettings();loadStatus();scan();
+</script>
+</body>
+</html>

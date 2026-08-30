@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.event') }} — {{ t('browser_title') }}{% endblock %}
+{% block main_class %}vw-main vw-main-wide{% endblock %}
+{% block head_extra %}
+<script src="{{ url_for('static', filename='chart.min.js') }}"></script>
+{% endblock %}
+{% block content %}
+<div class="vw-dash-toolbar vw-device-toolbar">
+    <div class="vw-device-toolbar-left">
+        <a href="{{ url_for('events_page') }}" class="vw-back-link">← {{ t('events.back') }}</a>
+        <div>
+            <h1 id="event-title">{{ t('page.event') }}</h1>
+            <p class="vw-muted" id="event-meta"></p>
+        </div>
+    </div>
+    <div class="vw-dash-detail-actions">
+        <button type="button" id="btn-record-event" class="vw-btn vw-btn-primary vw-btn-sm hidden">{{ t('events.record_start') }}</button>
+        <button type="button" id="btn-stop-event" class="vw-btn vw-btn-danger vw-btn-sm hidden">{{ t('events.record_stop') }}</button>
+        <a id="export-link" class="vw-btn vw-btn-ghost vw-btn-sm" href="#">{{ t('events.export') }}</a>
+        <button type="button" id="delete-event" class="vw-btn vw-btn-danger vw-btn-sm">{{ t('events.delete') }}</button>
+    </div>
+</div>
+
+<div id="event-status" class="vw-banner vw-banner-info hidden"></div>
+
+<div class="vw-dash-layout" id="event-layout">
+    <aside class="vw-dash-sidebar">
+        <div class="vw-panel-head">{{ t('events.devices') }}</div>
+        <div class="vw-dash-list-wrap">
+            <div class="vw-node-nav" id="event-device-list" role="listbox"></div>
+        </div>
+    </aside>
+
+    <section class="vw-dash-detail">
+        <div id="event-detail-empty" class="vw-dash-detail-empty">
+            <p>{{ t('events.select_device') }}</p>
+        </div>
+        <div id="event-detail-content" class="hidden vw-panel-body">
+            <div class="vw-dash-detail-head">
+                <div>
+                    <h2 id="event-device-name"></h2>
+                    <p class="vw-muted" id="event-device-meta"></p>
+                </div>
+                <span id="event-device-status"></span>
+            </div>
+            <div class="vw-dash-detail-kpis">
+                <div class="vw-dash-kpi"><span class="lbl">{{ t('grid.total_power') }}</span><span class="val" id="event-total-p">—</span></div>
+                <div class="vw-dash-kpi"><span class="lbl">{{ t('grid.neutral') }}</span><span class="val" id="event-neutral">—</span></div>
+            </div>
+            <table class="vw-dash-phase-table vw-device-phase-table">
+                <colgroup>
+                    <col class="col-phase"><col class="col-metric"><col class="col-metric"><col class="col-metric">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="col-phase"></th>
+                        <th class="col-metric">{{ t('live.voltage') }}</th>
+                        <th class="col-metric">{{ t('live.current') }}</th>
+                        <th class="col-metric">{{ t('live.power') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="event-phase-body"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="vw-dash-fleet vw-device-history">
+    <div class="vw-panel-head">{{ t('device.history') }}</div>
+    <div class="vw-device-history-canvas"><canvas id="event-chart"></canvas></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.VW_EVENT_ID = {{ event_id }};</script>
+<script src="{{ url_for('static', filename='js/chart_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/event_detail.js') }}"></script>
+{% endblock %}

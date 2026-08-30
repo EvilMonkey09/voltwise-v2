@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.settings') }} — {{ t('browser_title') }}{% endblock %}
+{% block main_class %}vw-main vw-main-wide{% endblock %}
+{% block content %}
+<div class="vw-dash-toolbar">
+    <div>
+        <h1>{{ t('page.settings') }}</h1>
+        <p class="vw-muted">{{ t('settings.lead') }}</p>
+    </div>
+</div>
+
+<form id="settings-form" class="vw-settings-grid">
+    <section class="vw-device-panel">
+        <div class="vw-panel-head">{{ t('settings.app') }}</div>
+        <div class="vw-panel-body">
+            <div class="vw-version-row">
+                <div>
+                    <span class="vw-muted">{{ t('settings.version') }}</span>
+                    <div class="vw-version-tag">v{{ app_version }}</div>
+                </div>
+                <button type="button" class="vw-btn vw-btn-ghost vw-btn-sm" id="btn-check-update">{{ t('settings.check_update') }}</button>
+            </div>
+            <p id="update-status-msg" class="vw-muted"></p>
+        </div>
+    </section>
+
+    <section class="vw-device-panel">
+        <div class="vw-panel-head">{{ t('settings.mqtt') }}</div>
+        <div class="vw-panel-body">
+            <div class="vw-form-row">
+                <label for="mqtt_broker_host">{{ t('settings.broker_host') }}</label>
+                <input class="vw-input" id="mqtt_broker_host" name="mqtt_broker_host" value="{{ settings.mqtt_broker_host }}">
+            </div>
+            <div class="vw-form-row">
+                <label for="mqtt_broker_port">{{ t('settings.broker_port') }}</label>
+                <input class="vw-input" id="mqtt_broker_port" name="mqtt_broker_port" type="number" value="{{ settings.mqtt_broker_port }}">
+            </div>
+        </div>
+    </section>
+
+    <section class="vw-device-panel">
+        <div class="vw-panel-head">{{ t('settings.imbalance') }}</div>
+        <div class="vw-panel-body">
+            <div class="vw-form-row">
+                <label for="imbalance_abs_threshold_a">{{ t('settings.imbalance_abs') }}</label>
+                <input class="vw-input" id="imbalance_abs_threshold_a" name="imbalance_abs_threshold_a" type="number" step="0.1" value="{{ settings.imbalance_abs_threshold_a }}">
+            </div>
+            <div class="vw-form-row">
+                <label for="imbalance_pct_threshold">{{ t('settings.imbalance_pct') }}</label>
+                <input class="vw-input" id="imbalance_pct_threshold" name="imbalance_pct_threshold" type="number" step="0.1" value="{{ settings.imbalance_pct_threshold }}">
+            </div>
+            <div class="vw-form-row">
+                <label for="imbalance_min_avg_a">{{ t('settings.imbalance_min_avg') }}</label>
+                <input class="vw-input" id="imbalance_min_avg_a" name="imbalance_min_avg_a" type="number" step="0.1" value="{{ settings.imbalance_min_avg_a }}">
+            </div>
+            <div class="vw-form-row">
+                <label for="imbalance_mode">{{ t('settings.imbalance_mode') }}</label>
+                <input class="vw-input" id="imbalance_mode" name="imbalance_mode" value="{{ settings.imbalance_mode }}">
+            </div>
+            <div class="vw-form-row">
+                <label for="offline_threshold_s">{{ t('settings.offline_threshold') }}</label>
+                <input class="vw-input" id="offline_threshold_s" name="offline_threshold_s" type="number" step="0.5" value="{{ settings.offline_threshold_s }}">
+            </div>
+        </div>
+    </section>
+
+    <div class="vw-settings-actions">
+        <button type="submit" class="vw-btn vw-btn-primary">{{ t('settings.save') }}</button>
+        <p id="settings-msg" class="vw-muted"></p>
+    </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

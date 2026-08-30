@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoltWise Flasher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="voltwise.css">
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js"></script>
+</head>
+<body>
+    <div class="vw-shell">
+        <header class="vw-topbar">
+            <div class="vw-brand">
+                <span class="vw-brand-mark">VoltWise</span>
+                <span class="vw-brand-sub">Flasher</span>
+            </div>
+        </header>
+        <main class="vw-main">
+            <div class="vw-page-header">
+                <div>
+                    <h1>Flash edge device</h1>
+                    <p class="vw-muted">Connect ESP32 via USB. Select profile, then flash.</p>
+                </div>
+            </div>
+            <div class="vw-banner vw-banner-info">Requires Chrome or Edge with Web Serial.</div>
+            <div class="vw-card" style="margin-bottom:12px;">
+                <div class="vw-section-title">Board profile</div>
+                <div class="vw-profile-grid" id="profiles">
+                    <div class="vw-profile-card selected" data-profile="wt32-eth01"><strong>WT32-ETH01</strong><p>Ethernet</p></div>
+                    <div class="vw-profile-card" data-profile="esp32dev"><strong>ESP32-WROOM</strong><p>WiFi</p></div>
+                    <div class="vw-profile-card" data-profile="simulation"><strong>Simulation</strong><p>Dev</p></div>
+                </div>
+            </div>
+            <div class="vw-card">
+                <esp-web-install-button id="flash-btn" manifest="manifests/wt32-eth01.json"></esp-web-install-button>
+            </div>
+        </main>
+    </div>
+    <script>
+        const BASE = window.VOLTWISE_MANIFEST_BASE || 'manifests';
+        let selected = 'wt32-eth01';
+        const btn = document.getElementById('flash-btn');
+        document.querySelectorAll('.vw-profile-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.vw-profile-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selected = card.dataset.profile;
+                btn.setAttribute('manifest', BASE + '/' + selected + '.json');
+            });
+        });
+    </script>
+</body>
+</html>

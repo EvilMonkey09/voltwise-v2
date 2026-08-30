@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.events') }} — {{ t('browser_title') }}{% endblock %}
+{% block main_class %}vw-main vw-main-wide{% endblock %}
+{% block content %}
+<div class="vw-dash-toolbar">
+    <div>
+        <h1>{{ t('page.events') }}</h1>
+        <p class="vw-muted">{{ t('events.lead') }}</p>
+    </div>
+    <button type="button" id="btn-create-event" class="vw-btn vw-btn-primary">{{ t('events.create_open') }}</button>
+</div>
+
+<section class="vw-device-panel">
+    <div class="vw-panel-head">{{ t('events.list') }}</div>
+    <div class="vw-table-wrap">
+        <table class="vw-data-table" id="events-table">
+            <thead>
+                <tr>
+                    <th>{{ t('events.name') }}</th>
+                    <th>{{ t('events.start') }}</th>
+                    <th>{{ t('events.duration') }}</th>
+                    <th class="col-num">{{ t('events.devices') }}</th>
+                    <th class="col-num">{{ t('events.logs') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <p id="events-empty" class="vw-empty-msg hidden">{{ t('events.empty') }}</p>
+    </div>
+</section>
+
+<div id="create-event-backdrop" class="vw-modal-backdrop hidden"></div>
+<div id="create-event-modal" class="vw-modal vw-modal-wide hidden" role="dialog" aria-labelledby="create-event-title">
+    <h2 id="create-event-title">{{ t('events.create') }}</h2>
+    <form id="create-event-form">
+        <div class="vw-form-row">
+            <label for="event-name">{{ t('events.name') }}</label>
+            <input class="vw-input" id="event-name" required placeholder="{{ t('modal.placeholder') }}">
+        </div>
+        <p class="vw-muted vw-form-hint">{{ t('events.devices_hint') }}</p>
+        <div id="device-picker" class="vw-device-picker"></div>
+        <div class="vw-modal-actions">
+            <button type="button" class="vw-btn vw-btn-ghost" id="create-event-cancel">{{ t('modal.cancel') }}</button>
+            <button type="submit" class="vw-btn vw-btn-primary">{{ t('events.create_btn') }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/events.js') }}"></script>
+{% endblock %}

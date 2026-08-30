@@ -1,0 +1,36 @@
+name: Firmware Build
+
+on:
+  push:
+    branches: [main]
+    paths: ['edge-firmware/**', 'tools/build_firmware.sh', 'server/VERSION']
+  pull_request:
+    paths: ['edge-firmware/**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [esp32dev, wt32-eth01, simulation]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ hashFiles('edge-firmware/platformio.ini') }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install platformio
+      - name: Build firmware
+        run: VOLTWISE_BUILD_ENVS="${{ matrix.env }}" ./tools/build_firmware.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.env }}
+          path: |
+            firmware-artifacts/bin/${{ matrix.env }}/
+            firmware-artifacts/release/firmware-${{ matrix.env }}.bin
+            firmware-artifacts/release/firmware-${{ matrix.env }}-*.bin

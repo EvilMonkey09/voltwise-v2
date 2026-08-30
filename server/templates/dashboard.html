@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.dashboard') }} — {{ t('browser_title') }}{% endblock %}
+{% block main_class %}vw-main vw-main-wide{% endblock %}
+{% block head_extra %}
+<script src="{{ url_for('static', filename='chart.min.js') }}"></script>
+{% endblock %}
+{% block content %}
+<div class="vw-dash-toolbar">
+    <div>
+        <h1>{{ t('page.dashboard') }}</h1>
+        <p class="vw-muted">{{ t('dashboard.lead') }}</p>
+    </div>
+    <div class="vw-muted" id="dash-clock"></div>
+</div>
+
+<div id="dash-summary" class="vw-dash-kpis"></div>
+
+<p id="no-devices" class="vw-banner vw-banner-info hidden">{{ t('empty.devices') }}</p>
+
+<div class="vw-dash-layout" id="dash-layout">
+    <aside class="vw-dash-sidebar">
+        <div class="vw-panel-head">{{ t('dashboard.nodes') }}</div>
+        <div class="vw-dash-list-wrap">
+            <div class="vw-node-nav" id="node-list" role="listbox" aria-label="{{ t('dashboard.nodes') }}"></div>
+        </div>
+    </aside>
+
+    <section class="vw-dash-detail" id="detail-panel">
+        <div id="detail-empty" class="vw-dash-detail-empty">
+            <p>{{ t('dashboard.select_node') }}</p>
+        </div>
+        <div id="detail-content" class="hidden">
+            <div class="vw-dash-detail-head">
+                <div>
+                    <h2 id="detail-name"></h2>
+                    <p class="vw-muted" id="detail-meta"></p>
+                </div>
+                <div class="vw-dash-detail-actions">
+                    <span id="detail-status"></span>
+                    <a id="detail-link" class="vw-btn vw-btn-ghost vw-btn-sm" href="#">{{ t('grid.view_detail') }}</a>
+                    <a id="detail-edge" class="vw-btn vw-btn-ghost vw-btn-sm hidden" href="#" target="_blank" rel="noopener">{{ t('grid.open_edge') }}</a>
+                    <a id="detail-export" class="vw-btn vw-btn-ghost vw-btn-sm hidden" href="#">{{ t('device.export') }}</a>
+                </div>
+            </div>
+            <div id="detail-warn" class="vw-banner vw-banner-warn hidden"></div>
+            <div class="vw-dash-detail-kpis">
+                <div class="vw-dash-kpi"><span class="lbl">{{ t('grid.total_power') }}</span><span class="val" id="detail-total-p">—</span></div>
+                <div class="vw-dash-kpi"><span class="lbl">{{ t('grid.neutral') }}</span><span class="val" id="detail-neutral">—</span></div>
+            </div>
+            <div class="vw-dash-trend-grid">
+                <div class="vw-trend-panel">
+                    <div class="vw-trend-label">{{ t('live.voltage') }}</div>
+                    <div class="vw-trend-canvas"><canvas id="chart-v"></canvas></div>
+                </div>
+                <div class="vw-trend-panel">
+                    <div class="vw-trend-label">{{ t('live.current') }}</div>
+                    <div class="vw-trend-canvas"><canvas id="chart-i"></canvas></div>
+                </div>
+                <div class="vw-trend-panel">
+                    <div class="vw-trend-label">{{ t('live.power') }}</div>
+                    <div class="vw-trend-canvas"><canvas id="chart-p"></canvas></div>
+                </div>
+            </div>
+            <table class="vw-dash-phase-table">
+                <colgroup>
+                    <col class="col-phase">
+                    <col class="col-metric">
+                    <col class="col-metric">
+                    <col class="col-metric">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="col-phase"></th>
+                        <th class="col-metric">{{ t('live.voltage') }}</th>
+                        <th class="col-metric">{{ t('live.current') }}</th>
+                        <th class="col-metric">{{ t('live.power') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="detail-phase-body"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="vw-dash-fleet" id="fleet-chart-panel">
+    <div class="vw-panel-head">{{ t('dashboard.fleet_chart') }}</div>
+    <div class="vw-fleet-canvas"><canvas id="fleet-chart"></canvas></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chart_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

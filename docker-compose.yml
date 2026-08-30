@@ -1,0 +1,35 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "25555:25555"
+    environment:
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: "1883"
+      VOLTWISE_PORT: "25555"
+      VOLTWISE_DATA_DIR: /data
+    volumes:
+      - voltwise-data:/data
+    depends_on:
+      - mosquitto
+
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python /app/tools/mqtt_simulator.py mosquitto 1883
+    depends_on:
+      - mosquitto
+      - server
+
+volumes:
+  voltwise-data:

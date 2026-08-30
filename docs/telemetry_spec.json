@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://voltwise.local/docs/telemetry_spec.json",
+  "title": "VoltWise Telemetry Payload",
+  "description": "MQTT telemetry published to voltwise/telemetry/<device_id> every 500ms.",
+  "type": "object",
+  "required": ["device_id", "timestamp", "phases", "system"],
+  "additionalProperties": false,
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Stable device identifier (UUID recommended)."
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Unix epoch seconds (fractional allowed)."
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/phase"
+      }
+    },
+    "neutral_current_a": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Calculated neutral conductor current in amperes."
+    },
+    "system": {
+      "$ref": "#/$defs/system"
+    }
+  },
+  "$defs": {
+    "phase": {
+      "type": "object",
+      "required": [
+        "label",
+        "voltage",
+        "current",
+        "power",
+        "energy",
+        "frequency",
+        "power_factor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "enum": ["L1", "L2", "L3"]
+        },
+        "voltage": {
+          "type": "number",
+          "minimum": 0,
+          "description": "RMS voltage in volts."
+        },
+        "current": {
+          "type": "number",
+          "minimum": 0,
+          "description": "RMS current in amperes."
+        },
+        "power": {
+          "type": "number",
+          "description": "Active power in watts."
+        },
+        "energy": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Cumulative energy in watt-hours."
+        },
+        "frequency": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Line frequency in hertz."
+        },
+        "power_factor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Power factor (0–1)."
+        }
+      }
+    },
+    "system": {
+      "type": "object",
+      "required": ["uptime_s", "ip", "network_type"],
+      "additionalProperties": false,
+      "properties": {
+        "uptime_s": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Device uptime in seconds."
+        },
+        "ip": {
+          "type": "string",
+          "description": "Current IPv4 address."
+        },
+        "network_type": {
+          "type": "string",
+          "enum": ["wifi", "ethernet"]
+        },
+        "simulation": {
+          "type": "boolean",
+          "default": false,
+          "description": "True when readings are synthetic."
+        }
+      }
+    }
+  }
+}

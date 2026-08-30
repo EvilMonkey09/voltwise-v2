@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Secrets & local data
+.env
+.env.*
+*.pem
+*.key
+server/data/
+**/dashboard.db
+**/update_check_cache.json
+**/server_settings.json
+
+# PlatformIO / firmware
+edge-firmware/.pio/
+edge-firmware/.vscode/
+
+# OS / IDE
+.DS_Store
+.idea/
+.cursor/
+
+# Build artifacts (CI produces these; optional local builds)
+# firmware-artifacts/bin/

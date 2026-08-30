@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ t('browser_title') }}{% endblock %}</title>
+    <script>
+    (function(){try{var t=localStorage.getItem('vw-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){}})();
+    </script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2308080c'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='%2322d3ee' font-size='14' font-family='sans-serif'%3EV%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='ui/voltwise.css') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <div class="vw-shell">
+        <header class="vw-topbar">
+            <div class="vw-brand">
+                <span class="vw-brand-mark">VoltWise</span>
+                <span class="vw-brand-sub">Central</span>
+            </div>
+            <nav class="vw-nav" aria-label="Main">
+                <a href="{{ url_for('index') }}" class="{% if active_nav == 'dashboard' %}active{% endif %}">{{ t('nav.dashboard') }}</a>
+                <a href="{{ url_for('events_page') }}" class="{% if active_nav == 'events' %}active{% endif %}">{{ t('nav.events') }}</a>
+                <a href="{{ url_for('flasher_page') }}" class="{% if active_nav == 'flasher' %}active{% endif %}">{{ t('nav.flasher') }}</a>
+                <a href="{{ url_for('settings_page') }}" class="{% if active_nav == 'settings' %}active{% endif %}">{{ t('nav.settings') }}</a>
+            </nav>
+            <div class="vw-toolbar">
+                <span id="recording-badge" class="vw-pill vw-pill-recording hidden">{{ t('recording.active') }}</span>
+                <button type="button" class="vw-btn vw-btn-ghost vw-btn-sm vw-btn-icon" id="btn-theme" title="Theme">◐</button>
+                <div class="vw-lang">
+                    <a href="{{ url_for('set_language', code='en') }}" class="{% if lang == 'en' %}active{% endif %}">{{ t('nav.lang_en') }}</a>
+                    <a href="{{ url_for('set_language', code='de') }}" class="{% if lang == 'de' %}active{% endif %}">{{ t('nav.lang_de') }}</a>
+                </div>
+                <button type="button" class="vw-btn vw-btn-danger vw-btn-sm" id="btn-record">{{ t('nav.record_start') }}</button>
+            </div>
+        </header>
+        <div id="update-banner" class="vw-update-banner hidden" role="status" aria-live="polite">
+            <div class="vw-update-banner-text">
+                <strong id="update-banner-title">{{ t('upd.title') }}</strong>
+                <span id="update-banner-detail" class="vw-muted"></span>
+            </div>
+            <div class="vw-update-banner-actions">
+                <a id="update-banner-link" class="vw-btn vw-btn-sm vw-btn-primary" href="#" target="_blank" rel="noopener">{{ t('upd.open_release') }}</a>
+                <button type="button" class="vw-btn vw-btn-sm vw-btn-ghost" id="update-banner-dismiss">{{ t('upd.later') }}</button>
+            </div>
+        </div>
+        <main class="{% block main_class %}vw-main{% endblock %}">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <div id="modal-backdrop" class="vw-modal-backdrop hidden"></div>
+    <div id="modal" class="vw-modal hidden" role="dialog">
+        <h2 id="modal-title"></h2>
+        <p class="vw-muted" id="modal-hint"></p>
+        <input type="text" id="modal-input" class="vw-input" autocomplete="off">
+        <div class="vw-modal-actions">
+            <button type="button" class="vw-btn vw-btn-ghost" id="modal-cancel">{{ t('modal.cancel') }}</button>
+            <button type="button" class="vw-btn vw-btn-primary" id="modal-ok">{{ t('modal.start') }}</button>
+        </div>
+    </div>
+
+    <script>window.VW_CENTRAL = {{ vw_central | tojson }};</script>
+    <script>window.VW_LANG = {{ lang | tojson }};</script>
+    <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

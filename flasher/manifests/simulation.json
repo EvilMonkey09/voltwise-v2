@@ -1,0 +1,13 @@
+{
+  "name": "VoltWise Edge Simulation",
+  "version": "0.3.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "https://raw.githubusercontent.com/EvilMonkey09/voltwise-v2/main/firmware-artifacts/bin/simulation/firmware.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}

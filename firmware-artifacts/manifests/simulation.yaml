@@ -1,0 +1,8 @@
+name: VoltWise Edge Simulation
+version: "0.3.0"
+new_install_prompt_erase: true
+builds:
+  - chipFamily: ESP32
+    parts:
+      - path: ../bin/simulation/firmware.bin
+        offset: 0x10000

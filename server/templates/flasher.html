@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.flasher') }} — {{ t('browser_title') }}{% endblock %}
+{% block head_extra %}
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js"></script>
+{% endblock %}
+{% block main_class %}vw-main vw-main-wide{% endblock %}
+{% block content %}
+<div class="vw-page-header">
+    <div>
+        <h1>{{ t('page.flasher') }}</h1>
+        <p class="vw-muted">{{ t('flasher.lead') }}</p>
+    </div>
+</div>
+<div class="vw-banner vw-banner-info">{{ t('flasher.browser_hint') }}</div>
+
+<div class="vw-card" style="margin-bottom:12px;">
+    <div class="vw-section-title">{{ t('flasher.svt_title') }}</div>
+    <div class="vw-form-row">
+        <label for="svt-name">{{ t('flasher.svt_name') }}</label>
+        <input class="vw-input" id="svt-name" placeholder="SVT-Halle-A">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;">
+        <div class="vw-form-row" style="margin:0;">
+            <label for="svt-mqtt">{{ t('flasher.svt_mqtt') }}</label>
+            <input class="vw-input" id="svt-mqtt" value="{{ settings.mqtt_broker_host }}">
+        </div>
+        <div class="vw-form-row" style="margin:0;">
+            <label for="svt-port">{{ t('flasher.svt_port') }}</label>
+            <input class="vw-input" id="svt-port" type="number" value="{{ settings.mqtt_broker_port }}">
+        </div>
+    </div>
+    <p class="vw-muted" style="font-size:12px;margin-top:8px;">{{ t('flasher.svt_hint') }}</p>
+</div>
+
+<div class="vw-card" style="margin-bottom:12px;">
+    <div class="vw-section-title" style="margin-bottom:10px;">{{ t('flasher.profile') }}</div>
+    <div class="vw-profile-grid" id="profile-grid">
+        <div class="vw-profile-card selected" data-profile="wt32-eth01">
+            <strong>{{ t('flasher.wt32') }}</strong>
+            <p>{{ t('flasher.wt32_desc') }}</p>
+        </div>
+        <div class="vw-profile-card" data-profile="esp32dev">
+            <strong>{{ t('flasher.esp32') }}</strong>
+            <p>{{ t('flasher.esp32_desc') }}</p>
+        </div>
+        <div class="vw-profile-card" data-profile="simulation">
+            <strong>{{ t('flasher.sim') }}</strong>
+            <p>{{ t('flasher.sim_desc') }}</p>
+        </div>
+    </div>
+</div>
+<div class="vw-card">
+    <esp-web-install-button id="flash-btn" manifest="/api/flasher/manifest/wt32-eth01"></esp-web-install-button>
+    <p id="flash-hint" class="vw-muted hidden" style="margin-top:12px;font-size:12px;"></p>
+    <p class="vw-muted vw-form-hint">{{ t('flasher.provision_hint') }}</p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/flasher.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,22 @@
+# VoltWise System Architecture & Design Guidelines
+
+## Core Architecture
+VoltWise follows an Edge-Collector model:
+1. **Edge Nodes (ESP32 / WT32-ETH01)**: Dedicated microcontrollers inside power distribution units (PDUs).
+   - Read 3-phase AC metrics from PZEM-004T v3.0 sensors via UART.
+   - Capability to Output local status to a color TFT/IPS display via SPI or I2C.
+   - Publish JSON telemetry to MQTT topic: `voltwise/telemetry/<device_id>` every 500ms.
+   - Host own Webserver for single Use
+2. **VoltWise Server (Central Core)**:
+   - Receives MQTT telemetry from all Edge Nodes in the network.
+   - Processes, stores (Timeseries/Database), and visualizes total power consumption, phase imbalance, and alerts.
+   - Manages node discovery, configuration updates, and device health.
+
+## Key Technical Decisions
+- **Communication Protocol**: MQTT with JSON payload.
+- **Data Payload**: Include device_id, phase metrics (voltage, current, power, energy, frequency, power_factor), timestamp, and system status (uptime, IP, network_type).
+- **Resilience**: Edge nodes must boot instantly (<1s), handle network dropouts gracefully without blocking loop performance, and operate statelessly.
+
+## Code Style & Conventions
+- Modular code architecture separating MQTT ingestion, database persistence, and UI visualization.
+- Strict typing and structured data validation for incoming MQTT messages on the backend.
