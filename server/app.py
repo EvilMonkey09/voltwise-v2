@@ -119,6 +119,13 @@ def app_version_string() -> str:
     return os.environ.get("VOLTWISE_VERSION", "0.3.0")
 
 
+def firmware_binary_version(profile: str) -> str | None:
+    path = FIRMWARE_DIR / "bin" / profile / "version.txt"
+    if path.is_file():
+        return path.read_text(encoding="utf-8").strip()
+    return None
+
+
 def discover_lan_ip() -> str:
     env = os.environ.get("VOLTWISE_PUBLIC_MQTT_HOST", "").strip()
     if env:
@@ -240,6 +247,11 @@ def event_detail_page(event_id):
 def flasher_page():
     settings = load_settings(DATA_DIR)
     mqtt_host, mqtt_internal = flasher_mqtt_host(settings)
+    app_ver = app_version_string()
+    stale_profiles = [
+        p for p in FLASHER_PROFILES
+        if (bv := firmware_binary_version(p)) and bv != app_ver
+    ]
     return _render(
         "flasher.html",
         "flasher",
@@ -247,6 +259,8 @@ def flasher_page():
         flasher_mqtt_host=mqtt_host,
         mqtt_internal=mqtt_internal,
         suggested_lan_ip=discover_lan_ip(),
+        stale_firmware_profiles=stale_profiles,
+        app_version=app_ver,
     )
 
 
@@ -580,6 +594,7 @@ def flasher_manifest(profile):
     manifest = {
         "name": meta["name"],
         "version": version,
+        "firmware_built_version": firmware_binary_version(profile),
         "new_install_prompt_erase": True,
         "builds": [{"chipFamily": meta["chipFamily"], "parts": parts}],
     }

@@ -20,8 +20,10 @@ echo "==> VoltWise firmware build v${VERSION}"
 
 for env in $ENVS; do
   echo "==> Building $env"
+  export PLATFORMIO_BUILD_FLAGS="-DVOLTWISE_FW_VERSION=\\\"${VERSION}\\\""
   (cd "$FW_DIR" && pio run -e "$env")
   (cd "$FW_DIR" && pio run -e "$env" -t buildfs) || echo "    (littlefs build skipped for $env)"
+  unset PLATFORMIO_BUILD_FLAGS
 
   BUILD="$FW_DIR/.pio/build/$env"
   DEST="$OUT_DIR/$env"
@@ -31,6 +33,7 @@ for env in $ENVS; do
   [ -f "$BUILD/bootloader.bin" ] && cp "$BUILD/bootloader.bin" "$DEST/"
   [ -f "$BUILD/partitions.bin" ] && cp "$BUILD/partitions.bin" "$DEST/"
   [ -f "$BUILD/littlefs.bin" ] && cp "$BUILD/littlefs.bin" "$DEST/"
+  echo "$VERSION" > "$DEST/version.txt"
 
   cp "$DEST/firmware.bin" "$RELEASE_DIR/firmware-${env}.bin"
   cp "$DEST/firmware.bin" "$RELEASE_DIR/firmware-${env}-${VERSION}.bin"

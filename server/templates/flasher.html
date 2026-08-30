@@ -11,6 +11,13 @@
         <p class="vw-muted">{{ t('flasher.lead') }}</p>
     </div>
 </div>
+{% if stale_firmware_profiles %}
+<div class="vw-banner vw-banner-warn">
+    {{ t('flasher.firmware_stale') }}
+    <code>./tools/build_firmware.sh</code>
+    ({{ t('flasher.firmware_stale_profiles') }}: {{ stale_firmware_profiles | join(', ') }})
+</div>
+{% endif %}
 <div id="flasher-warnings"></div>
 <div class="vw-banner vw-banner-info">{{ t('flasher.browser_hint') }}</div>
 {% if mqtt_internal %}
