@@ -2,86 +2,188 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08080c">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>VoltWise Setup</title>
 <link rel="stylesheet" href="/voltwise.css">
 </head>
-<body>
-<div class="vw-edge-shell">
-    <header class="vw-edge-header">
-        <div class="vw-edge-brand">
-            <span class="vw-edge-mark">VoltWise</span>
-            <span class="vw-edge-sub">Setup</span>
+<body class="vw-portal">
+<div class="vw-portal-bg"></div>
+<div class="vw-portal-wrap">
+    <header class="vw-portal-top">
+        <div class="vw-portal-brand">
+            <span class="vw-portal-logo">VoltWise</span>
+            <span class="vw-portal-tag">Setup</span>
         </div>
-        <span class="vw-edge-pill vw-edge-pill-setup">Hotspot aktiv</span>
+        <span class="vw-portal-badge">Hotspot aktiv</span>
     </header>
 
-    <p class="vw-edge-lead">Verbinde diesen Stromverteiler mit deinem WLAN und MQTT-Broker.</p>
+    <section class="vw-portal-hero">
+        <h1>Stromverteiler einrichten</h1>
+        <p>Verbinde dieses Gerät mit deinem WLAN und dem VoltWise Central MQTT-Broker.</p>
+        <div class="vw-portal-steps">
+            <span class="on">1 · Gerät</span>
+            <span class="sep">›</span>
+            <span>2 · WLAN</span>
+        </div>
+        <div class="vw-portal-meta" id="ap-info">Lade Status…</div>
+    </section>
 
-    <div class="vw-card">
-        <div class="vw-section-title">Gerät</div>
-        <div class="vw-form-row"><label>Anzeigename</label><input class="vw-input" id="name" placeholder="SVT-Halle-A"></div>
-        <div class="vw-form-row"><label>MQTT-Broker</label><input class="vw-input" id="broker" placeholder="192.168.1.10"></div>
-        <div class="vw-form-row"><label>MQTT-Port</label><input class="vw-input" id="port" type="number" value="1883"></div>
-        <button class="vw-btn vw-btn-ghost vw-btn-sm" onclick="saveDevice()">Geräteeinstellungen speichern</button>
-        <p id="device-msg" class="vw-edge-msg"></p>
-    </div>
+    <section class="vw-portal-card">
+        <div class="vw-portal-card-head">
+            <span class="vw-portal-icon">⚡</span>
+            <div>
+                <h2>Gerät & MQTT</h2>
+                <p>Name und Broker für VoltWise Central</p>
+            </div>
+        </div>
+        <label class="vw-portal-field">
+            <span>Anzeigename</span>
+            <input id="name" type="text" placeholder="z. B. SVT-Halle-A" autocomplete="off">
+        </label>
+        <div class="vw-portal-row">
+            <label class="vw-portal-field grow">
+                <span>MQTT-Broker (LAN-IP)</span>
+                <input id="broker" type="text" placeholder="192.168.1.10" inputmode="decimal">
+            </label>
+            <label class="vw-portal-field narrow">
+                <span>Port</span>
+                <input id="port" type="number" value="1883" inputmode="numeric">
+            </label>
+        </div>
+        <button type="button" class="vw-portal-btn ghost" onclick="saveDevice()">Einstellungen speichern</button>
+        <p id="device-msg" class="vw-portal-feedback"></p>
+    </section>
 
-    <div class="vw-card">
-        <div class="vw-section-title">WLAN verbinden</div>
-        <p class="vw-muted vw-edge-hint">Netzwerk wählen oder SSID manuell eingeben.</p>
-        <div id="networks" class="vw-network-list vw-muted">Scanne…</div>
-        <div class="vw-form-row"><label>SSID</label><input class="vw-input" id="ssid" autocomplete="off"></div>
-        <div class="vw-form-row"><label>Passwort</label><input class="vw-input" id="pass" type="password" autocomplete="off"></div>
-        <button class="vw-btn vw-btn-primary vw-btn-block" onclick="connect()">WLAN verbinden</button>
-        <p id="wifi-msg" class="vw-edge-msg"></p>
-    </div>
+    <section class="vw-portal-card">
+        <div class="vw-portal-card-head">
+            <span class="vw-portal-icon">📶</span>
+            <div>
+                <h2>WLAN verbinden</h2>
+                <p>Netzwerk wählen oder SSID eingeben</p>
+            </div>
+        </div>
+        <div id="networks" class="vw-portal-networks">
+            <div class="vw-portal-loading"><span></span> Scanne Netzwerke…</div>
+        </div>
+        <label class="vw-portal-field">
+            <span>SSID</span>
+            <input id="ssid" type="text" autocomplete="off" autocapitalize="off">
+        </label>
+        <label class="vw-portal-field">
+            <span>Passwort</span>
+            <input id="pass" type="password" autocomplete="off">
+        </label>
+        <button type="button" class="vw-portal-btn primary" onclick="connect()">Mit WLAN verbinden</button>
+        <p id="wifi-msg" class="vw-portal-feedback"></p>
+    </section>
 
-    <p class="vw-edge-foot vw-muted" id="ap-info"></p>
+    <footer class="vw-portal-foot">
+        VoltWise Edge · Nach erfolgreicher Verbindung schließt sich der Hotspot automatisch.
+    </footer>
 </div>
 <script>
-async function loadSettings(){
-  const r=await fetch('/api/settings');const d=await r.json();
-  document.getElementById('name').value=d.device_name||'';
-  document.getElementById('broker').value=d.mqtt_broker||'';
-  document.getElementById('port').value=d.mqtt_port||1883;
+function setFeedback(id, text, kind) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = 'vw-portal-feedback' + (kind ? ' ' + kind : '');
 }
-async function loadStatus(){
-  const r=await fetch('/api/network/status');const d=await r.json();
-  const ap=d.ap_ssid||'VoltWise-Setup';
-  document.getElementById('ap-info').textContent='Hotspot: '+ap+' · Gerät: http://'+(d.ip||'192.168.4.1');
+function signalBars(rssi) {
+    const n = rssi >= -55 ? 4 : rssi >= -65 ? 3 : rssi >= -75 ? 2 : 1;
+    return [1,2,3,4].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('');
 }
-async function saveDevice(){
-  await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-    device_name:document.getElementById('name').value,
-    mqtt_broker:document.getElementById('broker').value,
-    mqtt_port:Number(document.getElementById('port').value)
-  })});
-  document.getElementById('device-msg').textContent='Gespeichert.';
+async function loadSettings() {
+    try {
+        const r = await fetch('/api/settings');
+        const d = await r.json();
+        document.getElementById('name').value = d.device_name || '';
+        document.getElementById('broker').value = d.mqtt_broker || '';
+        document.getElementById('port').value = d.mqtt_port || 1883;
+    } catch (e) { /* ignore */ }
 }
-async function scan(){
-  const r=await fetch('/api/scan');const j=await r.json();
-  const el=document.getElementById('networks');el.innerHTML='';
-  if(!(j.networks||[]).length){el.textContent='Keine Netzwerke gefunden.';return;}
-  (j.networks||[]).forEach(n=>{
-    const b=document.createElement('button');
-    b.type='button';
-    b.className='vw-network-chip';
-    b.textContent=n.ssid+' ('+n.signal+' dBm)';
-    b.onclick=()=>{document.getElementById('ssid').value=n.ssid;document.getElementById('pass').focus();};
-    el.appendChild(b);
-  });
+async function loadStatus() {
+    try {
+        const r = await fetch('/api/network/status');
+        const d = await r.json();
+        const ap = d.ap_ssid || 'VoltWise-Setup';
+        document.getElementById('ap-info').innerHTML =
+            `<strong>${ap}</strong> · Gerät unter <code>http://${d.ip || '192.168.4.1'}</code>`;
+    } catch (e) {
+        document.getElementById('ap-info').textContent = 'Hotspot: VoltWise-Setup';
+    }
 }
-async function connect(){
-  const ssid=document.getElementById('ssid').value.trim();
-  const password=document.getElementById('pass').value;
-  if(!ssid){document.getElementById('wifi-msg').textContent='Bitte SSID eingeben.';return;}
-  document.getElementById('wifi-msg').textContent='Verbinde…';
-  const r=await fetch('/api/add-network',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid,password})});
-  const j=await r.json();
-  document.getElementById('wifi-msg').textContent=j.ok?'Verbunden. Hotspot wird geschlossen…':'Verbindung fehlgeschlagen. Passwort prüfen.';
+async function saveDevice() {
+    setFeedback('device-msg', 'Speichere…');
+    try {
+        await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                device_name: document.getElementById('name').value,
+                mqtt_broker: document.getElementById('broker').value,
+                mqtt_port: Number(document.getElementById('port').value),
+            }),
+        });
+        setFeedback('device-msg', 'Gespeichert.', 'ok');
+    } catch (e) {
+        setFeedback('device-msg', 'Speichern fehlgeschlagen.', 'err');
+    }
 }
-loadSettings();loadStatus();scan();
+async function scan() {
+    const el = document.getElementById('networks');
+    el.innerHTML = '<div class="vw-portal-loading"><span></span> Scanne Netzwerke…</div>';
+    try {
+        const r = await fetch('/api/scan');
+        const j = await r.json();
+        const nets = j.networks || [];
+        if (!nets.length) {
+            el.innerHTML = '<p class="vw-portal-empty">Keine WLAN-Netzwerke gefunden. SSID manuell eingeben.</p>';
+            return;
+        }
+        el.innerHTML = '';
+        nets.sort((a, b) => b.signal - a.signal).forEach(n => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'vw-portal-net';
+            btn.innerHTML = `<span class="ssid">${escapeHtml(n.ssid)}</span><span class="bars">${signalBars(n.signal)}</span><span class="rssi">${n.signal} dBm</span>`;
+            btn.onclick = () => {
+                document.querySelectorAll('.vw-portal-net').forEach(x => x.classList.remove('picked'));
+                btn.classList.add('picked');
+                document.getElementById('ssid').value = n.ssid;
+                document.getElementById('pass').focus();
+            };
+            el.appendChild(btn);
+        });
+    } catch (e) {
+        el.innerHTML = '<p class="vw-portal-empty">Scan fehlgeschlagen. SSID manuell eingeben.</p>';
+    }
+}
+function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+async function connect() {
+    const ssid = document.getElementById('ssid').value.trim();
+    const password = document.getElementById('pass').value;
+    if (!ssid) { setFeedback('wifi-msg', 'Bitte SSID eingeben.', 'err'); return; }
+    setFeedback('wifi-msg', 'Verbinde mit WLAN…');
+    try {
+        const r = await fetch('/api/add-network', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ssid, password }),
+        });
+        const j = await r.json();
+        if (j.ok) setFeedback('wifi-msg', 'Verbunden! Hotspot wird geschlossen…', 'ok');
+        else setFeedback('wifi-msg', 'Verbindung fehlgeschlagen. Passwort prüfen.', 'err');
+    } catch (e) {
+        setFeedback('wifi-msg', 'Verbindung fehlgeschlagen.', 'err');
+    }
+}
+loadSettings();
+loadStatus();
+scan();
 </script>
 </body>
 </html>

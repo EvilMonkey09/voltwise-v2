@@ -595,6 +595,307 @@ a:hover { color: var(--vw-accent-hover); }
 }
 .vw-network-chip:hover { border-color: var(--vw-accent); background: var(--vw-accent-dim); }
 
+.vw-network-chip:hover { border-color: var(--vw-accent); background: var(--vw-accent-dim); }
+
+/* ── Captive portal (mobile-first) ── */
+.vw-portal {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #08080c;
+  color: #e8e8ed;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+.vw-portal * { box-sizing: border-box; }
+.vw-portal-bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(34, 211, 238, 0.15), transparent),
+    linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.03) 1px, transparent 1px);
+  background-size: auto, 24px 24px, 24px 24px;
+  pointer-events: none;
+}
+.vw-portal-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+.vw-portal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 16px;
+}
+.vw-portal-brand { display: flex; align-items: baseline; gap: 8px; }
+.vw-portal-logo {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #e8e8ed, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.vw-portal-tag {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6b7280;
+  padding-left: 8px;
+  border-left: 1px solid #1f1f2e;
+}
+.vw-portal-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  white-space: nowrap;
+}
+.vw-portal-hero {
+  margin-bottom: 16px;
+  padding: 18px 16px;
+  border-radius: 10px;
+  border: 1px solid #1f1f2e;
+  background: linear-gradient(160deg, #0f0f14 0%, #12121a 100%);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.06);
+}
+.vw-portal-hero h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #e8e8ed;
+}
+.vw-portal-hero > p {
+  margin: 0 0 14px;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+.vw-portal-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.vw-portal-steps span { color: #4b5563; }
+.vw-portal-steps span.on { color: #22d3ee; }
+.vw-portal-steps .sep { color: #2a2a3d; font-weight: 400; }
+.vw-portal-meta {
+  font-size: 12px;
+  color: #6b7280;
+  padding: 10px 12px;
+  background: #16161f;
+  border-radius: 6px;
+  border: 1px solid #1f1f2e;
+}
+.vw-portal-meta strong { color: #e8e8ed; }
+.vw-portal-meta code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: #22d3ee;
+}
+.vw-portal-card {
+  margin-bottom: 14px;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #1f1f2e;
+  background: #0f0f14;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+}
+.vw-portal-card-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #1f1f2e;
+}
+.vw-portal-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border-radius: 8px;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  flex-shrink: 0;
+}
+.vw-portal-card-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e8e8ed;
+}
+.vw-portal-card-head p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+.vw-portal-field {
+  display: block;
+  margin-bottom: 12px;
+}
+.vw-portal-field span {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+.vw-portal-field input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  font-family: inherit;
+  color: #e8e8ed;
+  background: #16161f;
+  border: 1px solid #2a2a3d;
+  border-radius: 8px;
+  outline: none;
+  -webkit-appearance: none;
+}
+.vw-portal-field input:focus {
+  border-color: #22d3ee;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+}
+.vw-portal-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.vw-portal-row .grow { flex: 1; min-width: 0; }
+.vw-portal-row .narrow { width: 88px; flex-shrink: 0; }
+.vw-portal-btn {
+  display: block;
+  width: 100%;
+  padding: 14px 16px;
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.vw-portal-btn.primary {
+  color: #08080c;
+  background: linear-gradient(135deg, #22d3ee, #06b6d4);
+  box-shadow: 0 4px 14px rgba(34, 211, 238, 0.35);
+}
+.vw-portal-btn.primary:active { transform: scale(0.98); }
+.vw-portal-btn.ghost {
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+}
+.vw-portal-networks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.vw-portal-net {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 14px;
+  color: #e8e8ed;
+  background: #16161f;
+  border: 1px solid #2a2a3d;
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.vw-portal-net .ssid { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vw-portal-net .rssi { font-size: 11px; color: #6b7280; font-variant-numeric: tabular-nums; }
+.vw-portal-net .bars { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
+.vw-portal-net .bars i {
+  display: block;
+  width: 4px;
+  border-radius: 1px;
+  background: #2a2a3d;
+}
+.vw-portal-net .bars i:nth-child(1) { height: 4px; }
+.vw-portal-net .bars i:nth-child(2) { height: 7px; }
+.vw-portal-net .bars i:nth-child(3) { height: 10px; }
+.vw-portal-net .bars i:nth-child(4) { height: 13px; }
+.vw-portal-net .bars i.on { background: #22d3ee; }
+.vw-portal-net.picked,
+.vw-portal-net:active {
+  border-color: #22d3ee;
+  background: rgba(34, 211, 238, 0.08);
+}
+.vw-portal-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  font-size: 13px;
+  color: #6b7280;
+  justify-content: center;
+}
+.vw-portal-loading span {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #2a2a3d;
+  border-top-color: #22d3ee;
+  border-radius: 50%;
+  animation: vw-spin 0.7s linear infinite;
+}
+@keyframes vw-spin { to { transform: rotate(360deg); } }
+.vw-portal-empty {
+  margin: 0;
+  padding: 12px;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+}
+.vw-portal-feedback {
+  margin: 10px 0 0;
+  min-height: 1.2em;
+  font-size: 13px;
+  color: #6b7280;
+}
+.vw-portal-feedback.ok { color: #4ade80; }
+.vw-portal-feedback.err { color: #f87171; }
+.vw-portal-foot {
+  margin-top: 8px;
+  padding: 12px 8px;
+  font-size: 11px;
+  color: #4b5563;
+  text-align: center;
+  line-height: 1.5;
+}
+
 @media (max-width: 1024px) {
   .vw-dash-charts { grid-template-columns: 1fr; }
 }

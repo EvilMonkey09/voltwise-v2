@@ -17,6 +17,17 @@ static String portalRedirectHtml() {
            "<p>VoltWise WLAN-Einrichtung …</p><a href=/ >Weiter</a></body></html>";
 }
 
+static bool sendLittleFs(AsyncWebServerRequest* r, const char* path, const char* contentType) {
+    if (!LittleFS.exists(path)) return false;
+    r->send(LittleFS, path, contentType);
+    return true;
+}
+
+static bool isStaticAssetPath(const String& url) {
+    return url.endsWith(".css") || url.endsWith(".js") || url.endsWith(".ico")
+        || url.endsWith(".svg") || url.endsWith(".png") || url.endsWith(".woff2");
+}
+
 void webServerInit() {
     server.on("/generate_204", HTTP_GET, [](AsyncWebServerRequest* r) { r->send(200, "text/html", portalRedirectHtml()); });
     server.on("/gen_204", HTTP_GET, [](AsyncWebServerRequest* r) { r->send(200, "text/html", portalRedirectHtml()); });
@@ -36,6 +47,14 @@ void webServerInit() {
     server.on("/settings", HTTP_GET, [](AsyncWebServerRequest* r) {
         if (LittleFS.exists("/settings.html")) r->send(LittleFS, "/settings.html", "text/html");
         else r->send(404);
+    });
+
+    server.on("/voltwise.css", HTTP_GET, [](AsyncWebServerRequest* r) {
+        if (!sendLittleFs(r, "/voltwise.css", "text/css")) r->send(404);
+    });
+
+    server.on("/portal.html", HTTP_GET, [](AsyncWebServerRequest* r) {
+        if (!sendLittleFs(r, "/portal.html", "text/html")) r->send(404);
     });
 
     server.on("/api/data", HTTP_GET, [](AsyncWebServerRequest* r) {
@@ -131,6 +150,11 @@ void webServerInit() {
     });
 
     server.onNotFound([](AsyncWebServerRequest* r) {
+        String url = r->url();
+        if (isStaticAssetPath(url) && LittleFS.exists(url)) {
+            r->send(LittleFS, url);
+            return;
+        }
         if (networkIsCaptivePortalActive()) {
             r->redirect("/");
             return;
