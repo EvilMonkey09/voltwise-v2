@@ -68,8 +68,14 @@ Artifacts land in `firmware-artifacts/bin/` for the Central flasher.
 - **CI**: push tag `v*` → [`.github/workflows/release.yml`](.github/workflows/release.yml) builds firmware, creates GitHub release, pushes Docker image to `ghcr.io`
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.3.1
+git push origin v0.3.1
+```
+
+Production deploy (published image):
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 Docker image after release:

@@ -1,5 +1,5 @@
 name: VoltWise Edge Simulation
-version: "0.3.0"
+version: "0.3.1"
 new_install_prompt_erase: true
 builds:
   - chipFamily: ESP32
