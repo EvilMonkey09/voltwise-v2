@@ -25,6 +25,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install platformio
+      - run: chmod +x tools/build_firmware.sh
       - name: Build firmware
         run: VOLTWISE_BUILD_ENVS="${{ matrix.env }}" ./tools/build_firmware.sh
       - uses: actions/upload-artifact@v4
