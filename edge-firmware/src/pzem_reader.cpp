@@ -50,17 +50,16 @@ static bool readPzem(int address, PhaseReading& out) {
     node.begin(address, Serial2);
     uint8_t result = node.readInputRegisters(0x0000, 10);
     if (result != node.ku8MBSuccess) return false;
-    uint16_t* v = node.getResponseBuffer();
-    uint32_t cur = ((uint32_t)v[2] << 16) | v[1];
-    uint32_t pwr = ((uint32_t)v[4] << 16) | v[3];
-    uint32_t en = ((uint32_t)v[6] << 16) | v[5];
+    uint32_t cur = ((uint32_t)node.getResponseBuffer(2) << 16) | node.getResponseBuffer(1);
+    uint32_t pwr = ((uint32_t)node.getResponseBuffer(4) << 16) | node.getResponseBuffer(3);
+    uint32_t en = ((uint32_t)node.getResponseBuffer(6) << 16) | node.getResponseBuffer(5);
     out.valid = true;
-    out.voltage = v[0] * 0.1f;
+    out.voltage = node.getResponseBuffer(0) * 0.1f;
     out.current = cur * 0.001f;
     out.power = pwr * 0.1f;
     out.energy = en;
-    out.frequency = v[7] * 0.1f;
-    out.powerFactor = v[8] * 0.01f;
+    out.frequency = node.getResponseBuffer(7) * 0.1f;
+    out.powerFactor = node.getResponseBuffer(8) * 0.01f;
     return true;
 }
 

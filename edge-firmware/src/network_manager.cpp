@@ -111,7 +111,9 @@ bool networkHasUplink() { return hasUplink; }
 bool networkIsCaptivePortalActive() { return apActive; }
 
 String networkGetIp() {
+#if defined(BOARD_WT32_ETH01)
     if (ethConnected()) return ETH.localIP().toString();
+#endif
     if (wifiStaConnected()) return WiFi.localIP().toString();
     if (apActive) return WiFi.softAPIP().toString();
     return "0.0.0.0";
