@@ -11,7 +11,11 @@
         <p class="vw-muted">{{ t('flasher.lead') }}</p>
     </div>
 </div>
+<div id="flasher-warnings"></div>
 <div class="vw-banner vw-banner-info">{{ t('flasher.browser_hint') }}</div>
+{% if mqtt_internal %}
+<div class="vw-banner vw-banner-warn">{{ t('flasher.mqtt_warn') }} <strong>{{ suggested_lan_ip }}</strong></div>
+{% endif %}
 
 <div class="vw-card" style="margin-bottom:12px;">
     <div class="vw-section-title">{{ t('flasher.svt_title') }}</div>
@@ -22,7 +26,7 @@
     <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;">
         <div class="vw-form-row" style="margin:0;">
             <label for="svt-mqtt">{{ t('flasher.svt_mqtt') }}</label>
-            <input class="vw-input" id="svt-mqtt" value="{{ settings.mqtt_broker_host }}">
+            <input class="vw-input" id="svt-mqtt" value="{{ flasher_mqtt_host }}" placeholder="{{ suggested_lan_ip }}">
         </div>
         <div class="vw-form-row" style="margin:0;">
             <label for="svt-port">{{ t('flasher.svt_port') }}</label>
@@ -51,8 +55,19 @@
 </div>
 <div class="vw-card">
     <esp-web-install-button id="flash-btn" manifest="/api/flasher/manifest/wt32-eth01"></esp-web-install-button>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button type="button" class="vw-btn vw-btn-ghost vw-btn-sm" id="btn-test-usb">{{ t('flasher.test_usb') }}</button>
+        <span id="usb-test-msg" class="vw-muted" style="font-size:12px;"></span>
+    </div>
     <p id="flash-hint" class="vw-muted hidden" style="margin-top:12px;font-size:12px;"></p>
     <p class="vw-muted vw-form-hint">{{ t('flasher.provision_hint') }}</p>
+</div>
+
+<div class="vw-card" style="margin-top:12px;">
+    <div class="vw-section-title">{{ t('flasher.usb_help_title') }}</div>
+    <p class="vw-muted" style="font-size:12px;margin:0;">{{ t('flasher.usb_help') }}</p>
+    <div class="vw-section-title" style="margin-top:14px;">{{ t('flasher.dashboard_help_title') }}</div>
+    <p class="vw-muted" style="font-size:12px;margin:0;">{{ t('flasher.dashboard_help') }}</p>
 </div>
 {% endblock %}
 {% block scripts %}

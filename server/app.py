@@ -6,6 +6,7 @@ import io
 import logging
 import os
 import platform
+import socket
 import sys
 import threading
 import time
@@ -118,6 +119,31 @@ def app_version_string() -> str:
     return os.environ.get("VOLTWISE_VERSION", "0.3.0")
 
 
+def discover_lan_ip() -> str:
+    env = os.environ.get("VOLTWISE_PUBLIC_MQTT_HOST", "").strip()
+    if env:
+        return env
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except OSError:
+        return "192.168.1.1"
+
+
+def is_internal_mqtt_host(host: str) -> bool:
+    h = (host or "").strip().lower()
+    return h in {"", "localhost", "127.0.0.1", "mosquitto", "host.docker.internal", "0.0.0.0"}
+
+
+def flasher_mqtt_host(settings: dict) -> tuple[str, bool]:
+    configured = str(settings.get("mqtt_broker_host", "")).strip()
+    suggested = discover_lan_ip()
+    if is_internal_mqtt_host(configured):
+        return suggested, True
+    return configured, False
+
+
 if getattr(sys, "frozen", False):
     app.template_folder = resource_path("templates")
     app.static_folder = resource_path("static")
@@ -196,7 +222,30 @@ def event_detail_page(event_id):
 
 @app.route("/flasher")
 def flasher_page():
-    return _render("flasher.html", "flasher", settings=load_settings(DATA_DIR))
+    settings = load_settings(DATA_DIR)
+    mqtt_host, mqtt_internal = flasher_mqtt_host(settings)
+    return _render(
+        "flasher.html",
+        "flasher",
+        settings=settings,
+        flasher_mqtt_host=mqtt_host,
+        mqtt_internal=mqtt_internal,
+        suggested_lan_ip=discover_lan_ip(),
+    )
+
+
+@app.route("/api/flasher/recommended-mqtt")
+def flasher_recommended_mqtt():
+    settings = load_settings(DATA_DIR)
+    host, internal = flasher_mqtt_host(settings)
+    return jsonify(
+        {
+            "host": host,
+            "port": int(settings.get("mqtt_broker_port", 1883)),
+            "internal_configured": internal,
+            "configured_host": settings.get("mqtt_broker_host"),
+        }
+    )
 
 
 @app.route("/settings")
