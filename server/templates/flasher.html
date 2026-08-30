@@ -14,7 +14,13 @@
 <div id="flasher-warnings"></div>
 <div class="vw-banner vw-banner-info">{{ t('flasher.browser_hint') }}</div>
 {% if mqtt_internal %}
-<div class="vw-banner vw-banner-warn">{{ t('flasher.mqtt_warn') }} <strong>{{ suggested_lan_ip }}</strong></div>
+<div class="vw-banner vw-banner-warn">
+    {% if suggested_lan_ip %}
+    {{ t('flasher.mqtt_warn') }} <strong>{{ suggested_lan_ip }}</strong>
+    {% else %}
+    {{ t('flasher.mqtt_warn_docker') }}
+    {% endif %}
+</div>
 {% endif %}
 
 <div class="vw-card" style="margin-bottom:12px;">

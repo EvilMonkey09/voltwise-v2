@@ -13,7 +13,10 @@
             <span class="vw-edge-mark">VoltWise</span>
             <span class="vw-edge-sub">Edge</span>
         </div>
-        <span id="net-pill" class="vw-edge-pill">—</span>
+        <div class="vw-edge-pills">
+            <span id="net-pill" class="vw-edge-pill">—</span>
+            <span id="mode-pill" class="vw-edge-pill vw-edge-pill-mode">—</span>
+        </div>
     </header>
 
     <div id="status" class="vw-card vw-kpi-card">
@@ -41,6 +44,10 @@ async function loadNet(){
   if(d.captive_portal){pill.textContent='Setup';pill.className='vw-edge-pill vw-edge-pill-setup';}
   else if(d.online){pill.textContent='Online';pill.className='vw-edge-pill vw-edge-pill-online';}
   else{pill.textContent='Offline';pill.className='vw-edge-pill vw-edge-pill-offline';}
+  const mode=document.getElementById('mode-pill');
+  if(d.mqtt_connected){mode.textContent='Central';mode.className='vw-edge-pill vw-edge-pill-central';}
+  else if(d.mqtt_configured){mode.textContent='Central (offline)';mode.className='vw-edge-pill vw-edge-pill-setup';}
+  else{mode.textContent='Standalone';mode.className='vw-edge-pill vw-edge-pill-mode';}
 }
 async function refresh(){
   const r=await fetch('/api/data');const d=await r.json();

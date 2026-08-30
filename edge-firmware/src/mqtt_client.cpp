@@ -9,10 +9,23 @@
 static WiFiClient wifiClient;
 static PubSubClient mqtt(wifiClient);
 static String topic;
+static bool mqttEnabled = false;
+
+bool mqttIsConfigured() {
+    return nvsGetMqttBroker().length() > 0;
+}
+
+bool mqttIsConnected() {
+    return mqttEnabled && mqtt.connected();
+}
 
 void mqttInit() {
     String broker = nvsGetMqttBroker();
-    if (broker.length() == 0) broker = "192.168.1.1";
+    mqttEnabled = broker.length() > 0;
+    if (!mqttEnabled) {
+        Serial.println("MQTT disabled (standalone mode)");
+        return;
+    }
     mqtt.setServer(broker.c_str(), nvsGetMqttPort());
     topic = "voltwise/telemetry/" + nvsGetDeviceId();
 }
@@ -22,6 +35,10 @@ void mqttTask(void* param) {
     unsigned long lastPub = 0;
     unsigned long lastReconnect = 0;
     for (;;) {
+        if (!mqttEnabled) {
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            continue;
+        }
         if (!networkHasUplink()) {
             vTaskDelay(pdMS_TO_TICKS(500));
             continue;

@@ -16,9 +16,11 @@
     </header>
 
     <div class="vw-card">
-        <div class="vw-section-title">Gerät & MQTT</div>
+        <div class="vw-section-title">Gerät</div>
         <div class="vw-form-row"><label>Anzeigename</label><input class="vw-input" id="name"></div>
-        <div class="vw-form-row"><label>MQTT-Broker</label><input class="vw-input" id="broker"></div>
+        <div class="vw-section-title">VoltWise Central (optional)</div>
+        <p class="vw-muted vw-edge-hint">MQTT leer lassen für Standalone — nur Messung über diese Seite.</p>
+        <div class="vw-form-row"><label>MQTT-Broker</label><input class="vw-input" id="broker" placeholder="leer = Standalone"></div>
         <div class="vw-form-row"><label>MQTT-Port</label><input class="vw-input" id="port" type="number" value="1883"></div>
         <button class="vw-btn vw-btn-primary vw-btn-sm" onclick="save()">Speichern</button>
         <p id="msg" class="vw-edge-msg"></p>

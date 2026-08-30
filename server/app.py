@@ -126,14 +126,30 @@ def discover_lan_ip() -> str:
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.connect(("8.8.8.8", 80))
-            return s.getsockname()[0]
+            ip = s.getsockname()[0]
+        if is_docker_bridge_ip(ip):
+            return ""
+        return ip
     except OSError:
-        return "192.168.1.1"
+        return ""
+
+
+def is_docker_bridge_ip(host: str) -> bool:
+    """Docker bridge networks often use 172.17–172.31.x.x — unreachable from LAN devices."""
+    try:
+        parts = [int(x) for x in host.split(".")]
+        if len(parts) != 4:
+            return False
+        return parts[0] == 172 and 17 <= parts[1] <= 31
+    except ValueError:
+        return False
 
 
 def is_internal_mqtt_host(host: str) -> bool:
     h = (host or "").strip().lower()
-    return h in {"", "localhost", "127.0.0.1", "mosquitto", "host.docker.internal", "0.0.0.0"}
+    if h in {"", "localhost", "127.0.0.1", "mosquitto", "host.docker.internal", "0.0.0.0"}:
+        return True
+    return is_docker_bridge_ip(h)
 
 
 def flasher_mqtt_host(settings: dict) -> tuple[str, bool]:

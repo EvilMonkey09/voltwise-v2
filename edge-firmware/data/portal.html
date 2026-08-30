@@ -21,7 +21,7 @@
 
     <section class="vw-portal-hero">
         <h1>Stromverteiler einrichten</h1>
-        <p>Verbinde dieses Gerät mit deinem WLAN und dem VoltWise Central MQTT-Broker.</p>
+        <p>Messung funktioniert sofort lokal. WLAN für den Zugriff im Netz — MQTT nur optional für VoltWise Central.</p>
         <div class="vw-portal-steps">
             <span class="on">1 · Gerät</span>
             <span class="sep">›</span>
@@ -34,26 +34,38 @@
         <div class="vw-portal-card-head">
             <span class="vw-portal-icon">⚡</span>
             <div>
-                <h2>Gerät & MQTT</h2>
-                <p>Name und Broker für VoltWise Central</p>
+                <h2>Gerät</h2>
+                <p>Name für Anzeige (optional)</p>
             </div>
         </div>
         <label class="vw-portal-field">
             <span>Anzeigename</span>
             <input id="name" type="text" placeholder="z. B. SVT-Halle-A" autocomplete="off">
         </label>
+        <button type="button" class="vw-portal-btn ghost" onclick="saveDevice()">Name speichern</button>
+        <p id="device-msg" class="vw-portal-feedback"></p>
+    </section>
+
+    <section class="vw-portal-card">
+        <div class="vw-portal-card-head">
+            <span class="vw-portal-icon">☁</span>
+            <div>
+                <h2>VoltWise Central</h2>
+                <p>MQTT optional — nur nötig für Dashboard-Ansicht</p>
+            </div>
+        </div>
         <div class="vw-portal-row">
             <label class="vw-portal-field grow">
                 <span>MQTT-Broker (LAN-IP)</span>
-                <input id="broker" type="text" placeholder="192.168.1.10" inputmode="decimal">
+                <input id="broker" type="text" placeholder="leer lassen = Standalone" inputmode="decimal">
             </label>
             <label class="vw-portal-field narrow">
                 <span>Port</span>
                 <input id="port" type="number" value="1883" inputmode="numeric">
             </label>
         </div>
-        <button type="button" class="vw-portal-btn ghost" onclick="saveDevice()">Einstellungen speichern</button>
-        <p id="device-msg" class="vw-portal-feedback"></p>
+        <button type="button" class="vw-portal-btn ghost" onclick="saveMqtt()">Central-Einstellungen speichern</button>
+        <p id="mqtt-msg" class="vw-portal-feedback"></p>
     </section>
 
     <section class="vw-portal-card">
@@ -61,7 +73,7 @@
             <span class="vw-portal-icon">📶</span>
             <div>
                 <h2>WLAN verbinden</h2>
-                <p>Netzwerk wählen oder SSID eingeben</p>
+                <p>Für lokalen Zugriff unter http://&lt;Geräte-IP&gt;</p>
             </div>
         </div>
         <div id="networks" class="vw-portal-networks">
@@ -122,13 +134,27 @@ async function saveDevice() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 device_name: document.getElementById('name').value,
-                mqtt_broker: document.getElementById('broker').value,
-                mqtt_port: Number(document.getElementById('port').value),
             }),
         });
         setFeedback('device-msg', 'Gespeichert.', 'ok');
     } catch (e) {
         setFeedback('device-msg', 'Speichern fehlgeschlagen.', 'err');
+    }
+}
+async function saveMqtt() {
+    setFeedback('mqtt-msg', 'Speichere…');
+    try {
+        await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mqtt_broker: document.getElementById('broker').value.trim(),
+                mqtt_port: Number(document.getElementById('port').value),
+            }),
+        });
+        setFeedback('mqtt-msg', 'Gespeichert. Gerät neu starten für MQTT-Verbindung.', 'ok');
+    } catch (e) {
+        setFeedback('mqtt-msg', 'Speichern fehlgeschlagen.', 'err');
     }
 }
 async function scan() {

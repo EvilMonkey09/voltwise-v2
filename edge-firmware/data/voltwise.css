@@ -564,10 +564,11 @@ a:hover { color: var(--vw-accent-hover); }
 .vw-edge-wrap { max-width: 480px; margin: 0 auto; padding: 16px; }
 .vw-edge-shell { max-width: 480px; margin: 0 auto; padding: 16px; position: relative; z-index: 1; }
 .vw-edge-header {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; margin-bottom: 14px; padding-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px; padding-bottom: 12px;
   border-bottom: 1px solid var(--vw-border);
 }
+.vw-edge-header .vw-edge-pills { display: flex; gap: 6px; flex-wrap: wrap; }
 .vw-edge-brand { display: flex; align-items: baseline; gap: 8px; }
 .vw-edge-mark { font-weight: 600; font-size: 16px; color: var(--vw-accent); letter-spacing: -0.02em; }
 .vw-edge-sub { font-size: 11px; color: var(--vw-muted); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -580,6 +581,8 @@ a:hover { color: var(--vw-accent-hover); }
 .vw-edge-pill-online { color: var(--vw-success); border-color: rgba(74,222,128,0.35); background: var(--vw-success-soft); }
 .vw-edge-pill-offline { color: var(--vw-muted); }
 .vw-edge-pill-setup { color: var(--vw-warning); border-color: rgba(251,191,36,0.35); background: var(--vw-warning-soft); }
+.vw-edge-pill-mode { color: var(--vw-muted); }
+.vw-edge-pill-central { color: var(--vw-accent); border-color: rgba(96,165,250,0.35); background: rgba(96,165,250,0.12); }
 .vw-edge-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .vw-edge-msg { margin: 8px 0 0; font-size: 12px; min-height: 1.2em; }
 .vw-edge-foot { margin-top: 16px; font-size: 11px; text-align: center; }

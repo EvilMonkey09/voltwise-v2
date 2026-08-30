@@ -3,6 +3,7 @@
 #include "nvs_config.h"
 #include "pzem_reader.h"
 #include "telemetry.h"
+#include "mqtt_client.h"
 #include "config.h"
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
@@ -118,6 +119,9 @@ void webServerInit() {
         doc["captive_portal"] = networkIsCaptivePortalActive();
         doc["ap_ssid"] = networkApSsid();
         doc["ip"] = networkGetIp();
+        doc["mqtt_configured"] = mqttIsConfigured();
+        doc["mqtt_connected"] = mqttIsConnected();
+        doc["mode"] = mqttIsConnected() ? "central" : "standalone";
         String out; serializeJson(doc, out);
         r->send(200, "application/json", out);
     });
