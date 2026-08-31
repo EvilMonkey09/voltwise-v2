@@ -161,9 +161,15 @@ async function scan() {
     const el = document.getElementById('networks');
     el.innerHTML = '<div class="vw-portal-loading"><span></span> Scanne Netzwerke…</div>';
     try {
-        const r = await fetch('/api/scan');
-        const j = await r.json();
-        const nets = j.networks || [];
+        let j = null;
+        for (let attempt = 0; attempt < 40; attempt++) {
+            const url = '/api/scan' + (attempt === 0 ? '?refresh=1' : '');
+            const r = await fetch(url);
+            j = await r.json();
+            if (!j.scanning) break;
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        const nets = (j && j.networks) || [];
         if (!nets.length) {
             el.innerHTML = '<p class="vw-portal-empty">Keine WLAN-Netzwerke gefunden. SSID manuell eingeben.</p>';
             return;

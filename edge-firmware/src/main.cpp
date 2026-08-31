@@ -12,7 +12,7 @@
 void setup() {
     Serial.begin(115200);
     delay(100);
-    Serial.printf("VoltWise Edge %s\n", VOLTWISE_FW_VERSION);
+    Serial.printf("VoltWise Edge %s (%s %s)\n", VOLTWISE_FW_VERSION, __DATE__, __TIME__);
 
     nvsConfigInit();
     telemetryInit();

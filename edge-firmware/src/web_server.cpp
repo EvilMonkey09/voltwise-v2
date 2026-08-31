@@ -11,6 +11,26 @@
 
 static AsyncWebServer server(VOLTWISE_WEB_PORT);
 
+struct WifiConnectJob {
+    String ssid;
+    String password;
+    AsyncWebServerRequest* request;
+};
+
+static void wifiConnectTask(void* arg) {
+    WifiConnectJob* job = static_cast<WifiConnectJob*>(arg);
+    bool ok = networkConnectWifiSync(job->ssid, job->password);
+    JsonDocument resp;
+    resp["ok"] = ok;
+    resp["mode"] = ok ? "connected" : "failed";
+    resp["handoff"] = ok;
+    String out;
+    serializeJson(resp, out);
+    job->request->send(200, "application/json", out);
+    delete job;
+    vTaskDelete(nullptr);
+}
+
 static String portalRedirectHtml() {
     return "<!DOCTYPE html><html><head><meta charset=utf-8>"
            "<meta http-equiv=refresh content=\"0;url=/\">"
@@ -94,6 +114,7 @@ void webServerInit() {
         });
 
     server.on("/api/scan", HTTP_GET, [](AsyncWebServerRequest* r) {
+        if (r->hasParam("refresh")) networkRequestWifiScan();
         r->send(200, "application/json", networkScanJson());
     });
 
@@ -103,13 +124,15 @@ void webServerInit() {
             if (deserializeJson(doc, data, len)) { r->send(400); return; }
             String ssid = doc["ssid"] | "";
             String pass = doc["password"] | "";
-            bool ok = networkConnectWifi(ssid, pass);
-            JsonDocument resp;
-            resp["ok"] = ok;
-            resp["mode"] = ok ? "connected" : "failed";
-            resp["handoff"] = ok;
-            String out; serializeJson(resp, out);
-            r->send(200, "application/json", out);
+            if (ssid.isEmpty()) {
+                r->send(400, "application/json", "{\"ok\":false,\"error\":\"missing_ssid\"}");
+                return;
+            }
+            auto* job = new WifiConnectJob{ssid, pass, r};
+            if (xTaskCreate(wifiConnectTask, "wifi_conn", 6144, job, 1, nullptr) != pdPASS) {
+                delete job;
+                r->send(503, "application/json", "{\"ok\":false,\"error\":\"busy\"}");
+            }
         });
 
     server.on("/api/network/status", HTTP_GET, [](AsyncWebServerRequest* r) {
