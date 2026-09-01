@@ -18,3 +18,4 @@ struct WifiProfile {
 int nvsGetWifiProfiles(WifiProfile* out, int maxCount);
 bool nvsAddWifiProfile(const String& ssid, const String& password);
 bool nvsDeleteWifiProfile(const String& ssid);
+bool nvsIsUsableMqttBroker(const String& host);

@@ -79,6 +79,7 @@
         <div id="networks" class="vw-portal-networks">
             <div class="vw-portal-loading"><span></span> Scanne Netzwerke…</div>
         </div>
+        <button type="button" class="vw-portal-btn ghost" onclick="scan()" style="margin-bottom:10px;">Netzwerke erneut scannen</button>
         <label class="vw-portal-field">
             <span>SSID</span>
             <input id="ssid" type="text" autocomplete="off" autocapitalize="off">
@@ -162,16 +163,19 @@ async function scan() {
     el.innerHTML = '<div class="vw-portal-loading"><span></span> Scanne Netzwerke…</div>';
     try {
         let j = null;
-        for (let attempt = 0; attempt < 40; attempt++) {
+        for (let attempt = 0; attempt < 60; attempt++) {
             const url = '/api/scan' + (attempt === 0 ? '?refresh=1' : '');
             const r = await fetch(url);
             j = await r.json();
             if (!j.scanning) break;
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
         const nets = (j && j.networks) || [];
         if (!nets.length) {
-            el.innerHTML = '<p class="vw-portal-empty">Keine WLAN-Netzwerke gefunden. SSID manuell eingeben.</p>';
+            const hint = j && j.error === 'scan_failed'
+                ? 'Scan fehlgeschlagen — SSID manuell eingeben oder erneut scannen.'
+                : 'Keine WLAN-Netzwerke gefunden. SSID manuell eingeben.';
+            el.innerHTML = '<p class="vw-portal-empty">' + hint + '</p>';
             return;
         }
         el.innerHTML = '';
@@ -207,8 +211,13 @@ async function connect() {
             body: JSON.stringify({ ssid, password }),
         });
         const j = await r.json();
-        if (j.ok) setFeedback('wifi-msg', 'Verbunden! Hotspot wird geschlossen…', 'ok');
-        else setFeedback('wifi-msg', 'Verbindung fehlgeschlagen. Passwort prüfen.', 'err');
+        if (j.ok) {
+            setFeedback('wifi-msg',
+                'Verbinde mit WLAN… Hotspot bleibt kurz aktiv. Danach Gerät unter http://<Geräte-IP> im Heimnetz öffnen.',
+                'ok');
+        } else {
+            setFeedback('wifi-msg', 'Verbindung fehlgeschlagen. Passwort prüfen.', 'err');
+        }
     } catch (e) {
         setFeedback('wifi-msg', 'Verbindung fehlgeschlagen.', 'err');
     }

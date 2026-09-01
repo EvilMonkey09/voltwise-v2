@@ -9,10 +9,11 @@
 static WiFiClient wifiClient;
 static PubSubClient mqtt(wifiClient);
 static String topic;
+static String mqttBrokerHost;
 static bool mqttEnabled = false;
 
 bool mqttIsConfigured() {
-    return nvsGetMqttBroker().length() > 0;
+    return mqttEnabled;
 }
 
 bool mqttIsConnected() {
@@ -20,14 +21,22 @@ bool mqttIsConnected() {
 }
 
 void mqttInit() {
-    String broker = nvsGetMqttBroker();
-    mqttEnabled = broker.length() > 0;
-    if (!mqttEnabled) {
-        Serial.println("MQTT disabled (standalone mode)");
+    mqttBrokerHost = nvsGetMqttBroker();
+    mqttBrokerHost.trim();
+    if (!nvsIsUsableMqttBroker(mqttBrokerHost)) {
+        if (mqttBrokerHost.length() > 0) {
+            Serial.printf("MQTT ignored (unusable broker '%s')\n", mqttBrokerHost.c_str());
+            nvsSetMqttBroker("", nvsGetMqttPort());
+        } else {
+            Serial.println("MQTT disabled (standalone mode)");
+        }
+        mqttEnabled = false;
         return;
     }
-    mqtt.setServer(broker.c_str(), nvsGetMqttPort());
+    mqttEnabled = true;
+    mqtt.setServer(mqttBrokerHost.c_str(), nvsGetMqttPort());
     topic = "voltwise/telemetry/" + nvsGetDeviceId();
+    Serial.printf("MQTT broker: %s:%u\n", mqttBrokerHost.c_str(), nvsGetMqttPort());
 }
 
 void mqttTask(void* param) {

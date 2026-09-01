@@ -16,11 +16,19 @@ static unsigned long offlineSince = 0;
 
 static volatile bool scanRequested = false;
 static volatile bool scanInProgress = false;
+static volatile bool connectInProgress = false;
+static volatile bool connectPending = false;
+static String pendingConnectSsid;
+static String pendingConnectPassword;
 static unsigned long lastScanFinishedMs = 0;
 static String scanResultJson = "{\"networks\":[],\"scanning\":false}";
 static SemaphoreHandle_t scanMutex = nullptr;
 
 static const unsigned long SCAN_MIN_INTERVAL_MS = 8000;
+
+static void processWifiConnect();
+
+void networkRequestWifiScan();
 
 static String apSsid() {
     uint8_t mac[6];
@@ -74,6 +82,7 @@ static void startCaptiveAp() {
     dnsServer.start(53, "*", gw);
     apActive = true;
     Serial.printf("AP started: %s\n", ssid.c_str());
+    networkRequestWifiScan();
 }
 
 static void stopCaptiveAp() {
@@ -105,44 +114,81 @@ static String buildScanJson(int count) {
     return out;
 }
 
-static void processWifiScan() {
-    if (scanRequested && !scanInProgress) {
-        unsigned long sinceLast = millis() - lastScanFinishedMs;
-        if (lastScanFinishedMs != 0 && sinceLast < SCAN_MIN_INTERVAL_MS) {
-            scanRequested = false;
-            return;
+static int runWifiScanWithWait() {
+    const int maxAttempts = 3;
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+        if (attempt > 0) {
+            Serial.printf("WiFi scan retry %d\n", attempt + 1);
+            vTaskDelay(pdMS_TO_TICKS(1000));
         }
-        scanRequested = false;
-        scanInProgress = true;
-        setScanJson("{\"networks\":[],\"scanning\":true}", true);
-        if (apActive) WiFi.mode(WIFI_AP_STA);
+
         WiFi.scanDelete();
+        vTaskDelay(pdMS_TO_TICKS(300));
+
+        wifi_mode_t mode = WiFi.getMode();
+        if (mode != WIFI_AP_STA && mode != WIFI_STA) {
+            WiFi.mode(apActive ? WIFI_AP_STA : WIFI_STA);
+            vTaskDelay(pdMS_TO_TICKS(200));
+        }
+
+        // Sync scan in network task — safe (does not block async_tcp / web server).
         Serial.println("WiFi scan started");
-        int started = WiFi.scanNetworks(true, true);
-        if (started != WIFI_SCAN_RUNNING) {
-            Serial.printf("WiFi scan finished immediately: %d\n", started);
-            setScanJson(buildScanJson(started < 0 ? 0 : started), false);
-            lastScanFinishedMs = millis();
-            WiFi.scanDelete();
+        int count = WiFi.scanNetworks(false, false);
+        if (count >= 0) {
+            Serial.printf("WiFi scan done: %d networks\n", count);
+            return count;
         }
-        return;
-    }
 
-    if (!scanInProgress) return;
+        Serial.printf("WiFi scan failed (attempt %d): %d\n", attempt + 1, count);
 
-    int count = WiFi.scanComplete();
-    if (count == WIFI_SCAN_RUNNING) return;
-    if (count == WIFI_SCAN_FAILED) {
-        Serial.println("WiFi scan failed");
-        setScanJson("{\"networks\":[],\"scanning\":false}", false);
-        lastScanFinishedMs = millis();
+        // Fallback: async without hidden SSIDs, keep DNS alive while waiting.
+        int started = WiFi.scanNetworks(true, false);
+        if (started == WIFI_SCAN_RUNNING) {
+            unsigned long deadline = millis() + 12000;
+            while (millis() < deadline) {
+                if (apActive) dnsServer.processNextRequest();
+                count = WiFi.scanComplete();
+                if (count != WIFI_SCAN_RUNNING) break;
+                vTaskDelay(pdMS_TO_TICKS(100));
+            }
+            if (count >= 0) {
+                Serial.printf("WiFi scan done: %d networks\n", count);
+                return count;
+            }
+            Serial.printf("WiFi async scan failed: %d\n", count);
+        } else if (started >= 0) {
+            Serial.printf("WiFi scan done: %d networks\n", started);
+            return started;
+        }
         WiFi.scanDelete();
+    }
+    return WIFI_SCAN_FAILED;
+}
+
+static void processWifiScan() {
+    if (!scanRequested || scanInProgress) return;
+
+    unsigned long sinceLast = millis() - lastScanFinishedMs;
+    if (lastScanFinishedMs != 0 && sinceLast < SCAN_MIN_INTERVAL_MS) {
+        scanRequested = false;
         return;
     }
-    Serial.printf("WiFi scan done: %d networks\n", count);
-    setScanJson(buildScanJson(count), false);
-    lastScanFinishedMs = millis();
+
+    scanRequested = false;
+    scanInProgress = true;
+    setScanJson("{\"networks\":[],\"scanning\":true}", true);
+
+    int count = runWifiScanWithWait();
+    if (count >= 0) {
+        setScanJson(buildScanJson(count), false);
+    } else {
+        Serial.println("WiFi scan failed");
+        setScanJson("{\"networks\":[],\"scanning\":false,\"error\":\"scan_failed\"}", false);
+    }
+
     WiFi.scanDelete();
+    lastScanFinishedMs = millis();
+    scanInProgress = false;
 }
 
 void networkInit() {
@@ -174,9 +220,9 @@ void networkTask(void* param) {
             }
         }
         if (apActive) dnsServer.processNextRequest();
-        processWifiScan();
-        unsigned long delayMs = scanInProgress ? 200 : VOLTWISE_NET_POLL_MS;
-        vTaskDelay(pdMS_TO_TICKS(delayMs));
+        processWifiConnect();
+        if (!connectInProgress && !connectPending) processWifiScan();
+        vTaskDelay(pdMS_TO_TICKS(VOLTWISE_NET_POLL_MS));
     }
 }
 
@@ -208,27 +254,61 @@ void networkForceSetupMode() {
 
 String networkApSsid() { return apActive ? apSsid() : String(); }
 
-bool networkConnectWifiSync(const String& ssid, const String& password) {
+static void processWifiConnect() {
+    if (!connectPending || connectInProgress || scanInProgress) return;
+
+    connectPending = false;
+    connectInProgress = true;
+
+    const String ssid = pendingConnectSsid;
+    const String password = pendingConnectPassword;
     nvsAddWifiProfile(ssid, password);
-    stopCaptiveAp();
-    WiFi.mode(WIFI_STA);
+
+    if (!apActive) {
+        WiFi.mode(WIFI_AP_STA);
+        startCaptiveAp();
+    } else {
+        WiFi.mode(WIFI_AP_STA);
+    }
+
+    WiFi.disconnect(false, false);
+    vTaskDelay(pdMS_TO_TICKS(200));
     WiFi.begin(ssid.c_str(), password.c_str());
+    Serial.printf("WiFi connecting to '%s'…\n", ssid.c_str());
+
     unsigned long start = millis();
-    while (millis() - start < 15000) {
-        if (WiFi.status() == WL_CONNECTED) {
+    bool connected = false;
+    while (millis() - start < 20000) {
+        if (wifiStaConnected()) {
             hasUplink = true;
             offlineSince = 0;
-            return true;
+            connected = true;
+            Serial.printf("WiFi connected: %s\n", WiFi.localIP().toString().c_str());
+            stopCaptiveAp();
+            break;
         }
+        if (apActive) dnsServer.processNextRequest();
         vTaskDelay(pdMS_TO_TICKS(200));
     }
-    startCaptiveAp();
-    networkRequestWifiScan();
-    return false;
+
+    if (!connected) {
+        hasUplink = false;
+        Serial.println("WiFi connect failed — hotspot stays active");
+        if (!apActive) startCaptiveAp();
+        networkRequestWifiScan();
+    }
+
+    connectInProgress = false;
+}
+
+void networkQueueWifiConnect(const String& ssid, const String& password) {
+    pendingConnectSsid = ssid;
+    pendingConnectPassword = password;
+    connectPending = true;
 }
 
 void networkRequestWifiScan() {
-    if (scanInProgress) return;
+    if (scanInProgress || connectInProgress || connectPending) return;
     if (lastScanFinishedMs != 0 && (millis() - lastScanFinishedMs) < SCAN_MIN_INTERVAL_MS) return;
     scanRequested = true;
 }

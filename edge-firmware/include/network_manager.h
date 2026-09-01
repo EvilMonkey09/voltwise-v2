@@ -7,7 +7,7 @@ bool networkHasUplink();
 String networkGetIp();
 String networkGetType();
 bool networkIsCaptivePortalActive();
-bool networkConnectWifiSync(const String& ssid, const String& password);
+void networkQueueWifiConnect(const String& ssid, const String& password);
 void networkForceSetupMode();
 void networkRequestWifiScan();
 String networkScanJson();
