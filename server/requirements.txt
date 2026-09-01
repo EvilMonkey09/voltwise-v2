@@ -6,3 +6,4 @@ requests>=2.31
 pystray>=0.19
 Pillow>=10.0
 cryptography>=42.0
+zeroconf>=0.131.0

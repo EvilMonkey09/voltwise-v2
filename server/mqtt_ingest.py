@@ -11,7 +11,7 @@ from pydantic import ValidationError
 import config
 from database_handler import DatabaseHandler
 from models import TelemetryPayload
-from state import registry
+from telemetry_processor import ingest_telemetry
 
 logger = logging.getLogger(__name__)
 
@@ -74,28 +74,12 @@ class MqttIngestService:
             )
             return
 
-        labels = self.db.get_device_labels()
-        label = labels.get(payload.device_id)
-        self.db.upsert_device(
-            payload.device_id,
-            ip=payload.system.ip,
-            network_type=payload.system.network_type,
-            last_seen=payload.timestamp,
-            status="online",
+        ingest_telemetry(
+            self.db,
+            payload,
+            self.get_recording_event_id,
+            source="mqtt",
         )
-        state = registry.update_device(payload.device_id, payload, device_label=label)
-
-        if payload.system.device_name:
-            self.db.set_remote_name(payload.device_id, payload.system.device_name)
-
-        event_id = self.get_recording_event_id()
-        if event_id is not None and self.db.should_record_device(event_id, payload.device_id):
-            self.db.log_telemetry(
-                payload.device_id,
-                payload,
-                event_id=event_id,
-                imbalance=state.imbalance,
-            )
 
     def start(self) -> None:
         if self._thread and self._thread.is_alive():

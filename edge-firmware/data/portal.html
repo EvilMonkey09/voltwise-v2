@@ -16,21 +16,30 @@
             <span class="vw-portal-logo">VoltWise</span>
             <span class="vw-portal-tag">Setup</span>
         </div>
-        <span class="vw-portal-badge">Hotspot aktiv</span>
+        <span class="vw-portal-badge" id="portal-badge">Hotspot aktiv</span>
     </header>
 
     <section class="vw-portal-hero">
         <h1>Stromverteiler einrichten</h1>
-        <p>Messung funktioniert sofort lokal. WLAN für den Zugriff im Netz — MQTT nur optional für VoltWise Central.</p>
-        <div class="vw-portal-steps">
-            <span class="on">1 · Gerät</span>
+        <p>Messung funktioniert sofort lokal. WLAN fürs Heimnetz — Central findet das Gerät automatisch.</p>
+        <div class="vw-portal-steps" id="portal-steps">
+            <span class="on" id="step-device">1 · Gerät</span>
             <span class="sep">›</span>
-            <span>2 · WLAN</span>
+            <span id="step-wifi">2 · WLAN</span>
         </div>
         <div class="vw-portal-meta" id="ap-info">Lade Status…</div>
     </section>
 
-    <section class="vw-portal-card">
+    <div id="success-banner" class="vw-portal-success hidden" role="status" aria-live="polite">
+        <div class="vw-portal-success-icon">✓</div>
+        <div class="vw-portal-success-body">
+            <strong>WLAN verbunden!</strong>
+            <p>Gerät ist im Heimnetz unter <code id="success-ip">—</code> erreichbar.</p>
+            <p class="vw-portal-success-sub" id="success-ap-hint">Hotspot bleibt noch kurz aktiv.</p>
+        </div>
+    </div>
+
+    <section class="vw-portal-card" id="device-card">
         <div class="vw-portal-card-head">
             <span class="vw-portal-icon">⚡</span>
             <div>
@@ -46,40 +55,22 @@
         <p id="device-msg" class="vw-portal-feedback"></p>
     </section>
 
-    <section class="vw-portal-card">
-        <div class="vw-portal-card-head">
-            <span class="vw-portal-icon">☁</span>
-            <div>
-                <h2>VoltWise Central</h2>
-                <p>MQTT optional — nur nötig für Dashboard-Ansicht</p>
-            </div>
-        </div>
-        <div class="vw-portal-row">
-            <label class="vw-portal-field grow">
-                <span>MQTT-Broker (LAN-IP)</span>
-                <input id="broker" type="text" placeholder="leer lassen = Standalone" inputmode="decimal">
-            </label>
-            <label class="vw-portal-field narrow">
-                <span>Port</span>
-                <input id="port" type="number" value="1883" inputmode="numeric">
-            </label>
-        </div>
-        <button type="button" class="vw-portal-btn ghost" onclick="saveMqtt()">Central-Einstellungen speichern</button>
-        <p id="mqtt-msg" class="vw-portal-feedback"></p>
-    </section>
-
-    <section class="vw-portal-card">
+    <section class="vw-portal-card" id="wifi-card">
         <div class="vw-portal-card-head">
             <span class="vw-portal-icon">📶</span>
             <div>
                 <h2>WLAN verbinden</h2>
-                <p>Für lokalen Zugriff unter http://&lt;Geräte-IP&gt;</p>
+                <p id="wifi-card-lead">Netzwerk wählen und verbinden</p>
             </div>
+        </div>
+        <div id="connect-progress" class="vw-portal-progress hidden">
+            <span class="vw-portal-loading"><span></span></span>
+            <span id="connect-progress-text">Verbinde mit WLAN…</span>
         </div>
         <div id="networks" class="vw-portal-networks">
             <div class="vw-portal-loading"><span></span> Scanne Netzwerke…</div>
         </div>
-        <button type="button" class="vw-portal-btn ghost" onclick="scan()" style="margin-bottom:10px;">Netzwerke erneut scannen</button>
+        <button type="button" class="vw-portal-btn ghost" id="btn-rescan" onclick="scan()" style="margin-bottom:10px;">Netzwerke erneut scannen</button>
         <label class="vw-portal-field">
             <span>SSID</span>
             <input id="ssid" type="text" autocomplete="off" autocapitalize="off">
@@ -88,15 +79,18 @@
             <span>Passwort</span>
             <input id="pass" type="password" autocomplete="off">
         </label>
-        <button type="button" class="vw-portal-btn primary" onclick="connect()">Mit WLAN verbinden</button>
+        <button type="button" class="vw-portal-btn primary" id="btn-connect" onclick="connect()">Mit WLAN verbinden</button>
         <p id="wifi-msg" class="vw-portal-feedback"></p>
     </section>
 
-    <footer class="vw-portal-foot">
-        VoltWise Edge · Nach erfolgreicher Verbindung schließt sich der Hotspot automatisch.
+    <footer class="vw-portal-foot" id="portal-foot">
+        VoltWise Edge · Nach erfolgreicher Verbindung bleibt der Hotspot noch ca. 30 Sekunden aktiv.
     </footer>
 </div>
 <script>
+let connectPollTimer = null;
+let statusPollTimer = null;
+
 function setFeedback(id, text, kind) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -107,25 +101,90 @@ function signalBars(rssi) {
     const n = rssi >= -55 ? 4 : rssi >= -65 ? 3 : rssi >= -75 ? 2 : 1;
     return [1,2,3,4].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('');
 }
+function setWifiFormDisabled(disabled) {
+    ['ssid', 'pass', 'btn-connect', 'btn-rescan'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = disabled;
+    });
+}
+function showConnectProgress(text) {
+    const box = document.getElementById('connect-progress');
+    const label = document.getElementById('connect-progress-text');
+    if (box) box.classList.remove('hidden');
+    if (label) label.textContent = text || 'Verbinde mit WLAN…';
+    setWifiFormDisabled(true);
+}
+function hideConnectProgress() {
+    const box = document.getElementById('connect-progress');
+    if (box) box.classList.add('hidden');
+}
+function showSuccess(d) {
+    const banner = document.getElementById('success-banner');
+    const ipEl = document.getElementById('success-ip');
+    const hint = document.getElementById('success-ap-hint');
+    const badge = document.getElementById('portal-badge');
+    const stepWifi = document.getElementById('step-wifi');
+    const foot = document.getElementById('portal-foot');
+    const staIp = d.sta_ip || d.ip || '—';
+
+    banner.classList.remove('hidden');
+    ipEl.textContent = staIp;
+    badge.textContent = 'Verbunden';
+    badge.className = 'vw-portal-badge vw-portal-badge-ok';
+    stepWifi.classList.add('on');
+    document.getElementById('wifi-card-lead').textContent = 'Erfolgreich verbunden';
+
+    if (d.ap_remaining_s > 0) {
+        hint.textContent = `Hotspot ${d.ap_ssid || 'VoltWise-Setup'} bleibt noch ${d.ap_remaining_s} s aktiv.`;
+        foot.textContent = `Hotspot schließt in ca. ${d.ap_remaining_s} s. Danach Gerät unter http://${staIp} im Heimnetz öffnen.`;
+    } else {
+        hint.textContent = 'Hotspot wurde beendet. Gerät nur noch im Heimnetz erreichbar.';
+        foot.textContent = `Setup abgeschlossen. Gerät unter http://${staIp} im Heimnetz öffnen.`;
+    }
+
+    hideConnectProgress();
+    setWifiFormDisabled(true);
+    setFeedback('wifi-msg', '', '');
+}
+function updateStatusUi(d) {
+    const ap = d.ap_ssid || 'VoltWise-Setup';
+    const apInfo = document.getElementById('ap-info');
+
+    if (d.wifi_connected && d.sta_ip) {
+        showSuccess(d);
+        apInfo.innerHTML = `<strong>Verbunden</strong> · Heimnetz <code>http://${d.sta_ip}</code>`;
+        return;
+    }
+
+    if (d.wifi_connecting) {
+        showConnectProgress('Verbinde mit WLAN…');
+        apInfo.innerHTML = `<strong>${ap}</strong> · Verbindung wird hergestellt…`;
+        return;
+    }
+
+    apInfo.innerHTML = `<strong>${ap}</strong> · Gerät unter <code>http://${d.ip || '192.168.4.1'}</code>`;
+}
+async function pollStatus() {
+    try {
+        const r = await fetch('/api/network/status');
+        const d = await r.json();
+        updateStatusUi(d);
+        if (d.wifi_connected && d.ap_remaining_s === 0) {
+            if (statusPollTimer) { clearInterval(statusPollTimer); statusPollTimer = null; }
+        }
+    } catch (e) { /* ignore */ }
+}
+function startStatusPolling() {
+    if (statusPollTimer) clearInterval(statusPollTimer);
+    pollStatus();
+    statusPollTimer = setInterval(pollStatus, 1000);
+}
 async function loadSettings() {
     try {
         const r = await fetch('/api/settings');
         const d = await r.json();
         document.getElementById('name').value = d.device_name || '';
-        document.getElementById('broker').value = d.mqtt_broker || '';
-        document.getElementById('port').value = d.mqtt_port || 1883;
     } catch (e) { /* ignore */ }
-}
-async function loadStatus() {
-    try {
-        const r = await fetch('/api/network/status');
-        const d = await r.json();
-        const ap = d.ap_ssid || 'VoltWise-Setup';
-        document.getElementById('ap-info').innerHTML =
-            `<strong>${ap}</strong> · Gerät unter <code>http://${d.ip || '192.168.4.1'}</code>`;
-    } catch (e) {
-        document.getElementById('ap-info').textContent = 'Hotspot: VoltWise-Setup';
-    }
 }
 async function saveDevice() {
     setFeedback('device-msg', 'Speichere…');
@@ -133,29 +192,11 @@ async function saveDevice() {
         await fetch('/api/settings', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                device_name: document.getElementById('name').value,
-            }),
+            body: JSON.stringify({ device_name: document.getElementById('name').value }),
         });
         setFeedback('device-msg', 'Gespeichert.', 'ok');
     } catch (e) {
         setFeedback('device-msg', 'Speichern fehlgeschlagen.', 'err');
-    }
-}
-async function saveMqtt() {
-    setFeedback('mqtt-msg', 'Speichere…');
-    try {
-        await fetch('/api/settings', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                mqtt_broker: document.getElementById('broker').value.trim(),
-                mqtt_port: Number(document.getElementById('port').value),
-            }),
-        });
-        setFeedback('mqtt-msg', 'Gespeichert. Gerät neu starten für MQTT-Verbindung.', 'ok');
-    } catch (e) {
-        setFeedback('mqtt-msg', 'Speichern fehlgeschlagen.', 'err');
     }
 }
 async function scan() {
@@ -203,7 +244,10 @@ async function connect() {
     const ssid = document.getElementById('ssid').value.trim();
     const password = document.getElementById('pass').value;
     if (!ssid) { setFeedback('wifi-msg', 'Bitte SSID eingeben.', 'err'); return; }
-    setFeedback('wifi-msg', 'Verbinde mit WLAN…');
+
+    showConnectProgress('Sende WLAN-Daten…');
+    setFeedback('wifi-msg', '');
+
     try {
         const r = await fetch('/api/add-network', {
             method: 'POST',
@@ -211,19 +255,33 @@ async function connect() {
             body: JSON.stringify({ ssid, password }),
         });
         const j = await r.json();
-        if (j.ok) {
-            setFeedback('wifi-msg',
-                'Verbinde mit WLAN… Hotspot bleibt kurz aktiv. Danach Gerät unter http://<Geräte-IP> im Heimnetz öffnen.',
-                'ok');
-        } else {
+        if (!j.ok) {
+            hideConnectProgress();
+            setWifiFormDisabled(false);
             setFeedback('wifi-msg', 'Verbindung fehlgeschlagen. Passwort prüfen.', 'err');
+            return;
         }
+
+        showConnectProgress(`Verbinde mit „${ssid}"…`);
+        startStatusPolling();
+        if (connectPollTimer) clearTimeout(connectPollTimer);
+        connectPollTimer = setTimeout(async () => {
+            const sr = await fetch('/api/network/status');
+            const sd = await sr.json();
+            if (!sd.wifi_connected) {
+                hideConnectProgress();
+                setWifiFormDisabled(false);
+                setFeedback('wifi-msg', 'Verbindung fehlgeschlagen. Passwort prüfen oder erneut versuchen.', 'err');
+            }
+        }, 25000);
     } catch (e) {
+        hideConnectProgress();
+        setWifiFormDisabled(false);
         setFeedback('wifi-msg', 'Verbindung fehlgeschlagen.', 'err');
     }
 }
 loadSettings();
-loadStatus();
+startStatusPolling();
 scan();
 </script>
 </body>

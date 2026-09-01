@@ -23,6 +23,7 @@ static String pendingConnectPassword;
 static unsigned long lastScanFinishedMs = 0;
 static String scanResultJson = "{\"networks\":[],\"scanning\":false}";
 static SemaphoreHandle_t scanMutex = nullptr;
+static unsigned long apGraceUntilMs = 0;
 
 static const unsigned long SCAN_MIN_INTERVAL_MS = 8000;
 
@@ -90,6 +91,23 @@ static void stopCaptiveAp() {
     dnsServer.stop();
     WiFi.softAPdisconnect(true);
     apActive = false;
+    Serial.println("AP stopped");
+}
+
+static bool shouldKeepApOpen() {
+    return apGraceUntilMs != 0 && millis() < apGraceUntilMs;
+}
+
+static void scheduleApGracePeriod() {
+    apGraceUntilMs = millis() + VOLTWISE_AP_GRACE_AFTER_CONNECT_MS;
+    Serial.printf("AP grace period: %lu s\n", VOLTWISE_AP_GRACE_AFTER_CONNECT_MS / 1000UL);
+}
+
+static void maybeStopCaptiveAp() {
+    if (!apActive) return;
+    if (shouldKeepApOpen()) return;
+    stopCaptiveAp();
+    apGraceUntilMs = 0;
 }
 
 static void setScanJson(const String& json, bool scanning) {
@@ -209,7 +227,7 @@ void networkTask(void* param) {
         if (uplink) {
             hasUplink = true;
             offlineSince = 0;
-            stopCaptiveAp();
+            maybeStopCaptiveAp();
         } else {
             hasUplink = false;
             if (offlineSince == 0) offlineSince = millis();
@@ -254,6 +272,20 @@ void networkForceSetupMode() {
 
 String networkApSsid() { return apActive ? apSsid() : String(); }
 
+bool networkIsWifiConnecting() { return connectInProgress || connectPending; }
+
+bool networkIsWifiConnected() { return wifiStaConnected(); }
+
+String networkGetStaIp() {
+    if (wifiStaConnected()) return WiFi.localIP().toString();
+    return "";
+}
+
+unsigned long networkApRemainingSeconds() {
+    if (!shouldKeepApOpen()) return 0;
+    return (apGraceUntilMs - millis() + 999) / 1000;
+}
+
 static void processWifiConnect() {
     if (!connectPending || connectInProgress || scanInProgress) return;
 
@@ -284,7 +316,7 @@ static void processWifiConnect() {
             offlineSince = 0;
             connected = true;
             Serial.printf("WiFi connected: %s\n", WiFi.localIP().toString().c_str());
-            stopCaptiveAp();
+            scheduleApGracePeriod();
             break;
         }
         if (apActive) dnsServer.processNextRequest();

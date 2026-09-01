@@ -18,6 +18,8 @@ import voltwise_release_info
 from database_handler import DatabaseHandler
 from imbalance import resolve_neutral_current
 from mqtt_ingest import MqttIngestService
+from udp_ingest import UdpIngestService
+from mdns_discovery import MdnsDiscoveryService
 from provision import NVS_OFFSET, build_provision_nvs, has_provision_params
 from settings_store import apply_runtime_settings, load_settings, save_settings
 from state import registry
@@ -65,6 +67,8 @@ logging.info("Starting VoltWise Server. Data Directory: %s", DATA_DIR)
 
 db = DatabaseHandler(DB_PATH)
 mqtt_service = MqttIngestService(db)
+udp_service = UdpIngestService(db, mqtt_service.get_recording_event_id)
+mdns_service = MdnsDiscoveryService(db, mqtt_service.get_recording_event_id)
 server_settings = load_settings(DATA_DIR)
 apply_runtime_settings(server_settings)
 
@@ -245,8 +249,6 @@ def event_detail_page(event_id):
 
 @app.route("/flasher")
 def flasher_page():
-    settings = load_settings(DATA_DIR)
-    mqtt_host, mqtt_internal = flasher_mqtt_host(settings)
     app_ver = app_version_string()
     stale_profiles = [
         p for p in FLASHER_PROFILES
@@ -255,26 +257,9 @@ def flasher_page():
     return _render(
         "flasher.html",
         "flasher",
-        settings=settings,
-        flasher_mqtt_host=mqtt_host,
-        mqtt_internal=mqtt_internal,
-        suggested_lan_ip=discover_lan_ip(),
+        settings=load_settings(DATA_DIR),
         stale_firmware_profiles=stale_profiles,
         app_version=app_ver,
-    )
-
-
-@app.route("/api/flasher/recommended-mqtt")
-def flasher_recommended_mqtt():
-    settings = load_settings(DATA_DIR)
-    host, internal = flasher_mqtt_host(settings)
-    return jsonify(
-        {
-            "host": host,
-            "port": int(settings.get("mqtt_broker_port", 1883)),
-            "internal_configured": internal,
-            "configured_host": settings.get("mqtt_broker_host"),
-        }
     )
 
 
@@ -582,10 +567,8 @@ def flasher_manifest(profile):
         parts.append({"path": f"/api/flasher/firmware/{profile}/firmware.bin", "offset": 0x10000})
 
     name = (request.args.get("name") or "").strip()
-    mqtt_host = (request.args.get("mqtt_host") or "").strip()
-    mqtt_port = request.args.get("mqtt_port", 1883, type=int)
-    if has_provision_params(name, mqtt_host):
-        qs = urlencode({"name": name, "mqtt_host": mqtt_host, "mqtt_port": mqtt_port})
+    if has_provision_params(name):
+        qs = urlencode({"name": name})
         parts.insert(2, {
             "path": f"/api/flasher/provision-nvs?{qs}",
             "offset": NVS_OFFSET,
@@ -604,10 +587,8 @@ def flasher_manifest(profile):
 @app.route("/api/flasher/provision-nvs", methods=["GET"])
 def flasher_provision_nvs():
     name = (request.args.get("name") or "").strip()
-    mqtt_host = (request.args.get("mqtt_host") or "").strip()
-    mqtt_port = request.args.get("mqtt_port", 1883, type=int)
     try:
-        data = build_provision_nvs(name, mqtt_host, mqtt_port)
+        data = build_provision_nvs(name)
     except Exception as exc:
         logging.exception("provision-nvs: %s", exc)
         return jsonify({"error": "provision_failed"}), 500
@@ -632,6 +613,8 @@ def bootstrap() -> None:
         mqtt_service.set_recording_event_id(active_id)
         logging.info("Restored active recording for event %s", active_id)
     mqtt_service.start()
+    udp_service.start()
+    mdns_service.start()
     start_heartbeat_monitor()
 
 

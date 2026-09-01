@@ -6,16 +6,12 @@ function loadSetup() {
         if (!raw) return;
         const d = JSON.parse(raw);
         if (d.name) document.getElementById('svt-name').value = d.name;
-        if (d.mqtt) document.getElementById('svt-mqtt').value = d.mqtt;
-        if (d.port) document.getElementById('svt-port').value = d.port;
     } catch (e) { /* ignore */ }
 }
 
 function readSetup() {
     return {
         name: document.getElementById('svt-name').value.trim(),
-        mqtt: document.getElementById('svt-mqtt').value.trim(),
-        port: document.getElementById('svt-port').value.trim() || '1883',
     };
 }
 
@@ -27,8 +23,6 @@ function buildManifestUrl(profile) {
     const d = readSetup();
     const params = new URLSearchParams();
     if (d.name) params.set('name', d.name);
-    if (d.mqtt) params.set('mqtt_host', d.mqtt);
-    if (d.port) params.set('mqtt_port', d.port);
     const qs = params.toString();
     return '/api/flasher/manifest/' + profile + (qs ? '?' + qs : '');
 }
@@ -90,9 +84,7 @@ async function testUsbConnection() {
     }
 }
 
-['svt-name', 'svt-mqtt', 'svt-port'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', () => { saveSetup(); updateManifest(); });
-});
+document.getElementById('svt-name')?.addEventListener('input', () => { saveSetup(); updateManifest(); });
 
 loadSetup();
 checkFlasherEnvironment();
@@ -117,7 +109,7 @@ if (flashBtn) {
         saveSetup();
         const d = readSetup();
         const hint = document.getElementById('flash-hint');
-        if (d.name || d.mqtt) {
+        if (d.name) {
             hint.textContent = C.flasher_provision_ok || '';
         } else {
             hint.textContent = C.flasher_after_flash || '';

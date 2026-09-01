@@ -68,3 +68,13 @@ String telemetryBuildJson(const char* deviceId, const char* ip, const char* netw
     serializeJson(doc, out);
     return out;
 }
+
+String telemetryBuildUdpJson(const char* deviceId, const char* ip, const char* networkType) {
+    String base = telemetryBuildJson(deviceId, ip, networkType);
+    JsonDocument doc;
+    if (deserializeJson(doc, base)) return base;
+    doc["magic"] = "voltwise";
+    String out;
+    serializeJson(doc, out);
+    return out;
+}

@@ -3,7 +3,7 @@
 #include "nvs_config.h"
 #include "pzem_reader.h"
 #include "telemetry.h"
-#include "mqtt_client.h"
+#include "central_telemetry.h"
 #include "config.h"
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
@@ -78,8 +78,6 @@ void webServerInit() {
     server.on("/api/settings", HTTP_GET, [](AsyncWebServerRequest* r) {
         JsonDocument doc;
         doc["device_name"] = nvsGetDeviceName();
-        doc["mqtt_broker"] = nvsGetMqttBroker();
-        doc["mqtt_port"] = nvsGetMqttPort();
         String out; serializeJson(doc, out);
         r->send(200, "application/json", out);
     });
@@ -89,7 +87,6 @@ void webServerInit() {
             JsonDocument doc;
             if (deserializeJson(doc, data, len)) { r->send(400); return; }
             if (doc["device_name"]) nvsSetDeviceName(doc["device_name"].as<String>());
-            if (doc["mqtt_broker"]) nvsSetMqttBroker(doc["mqtt_broker"].as<String>(), doc["mqtt_port"] | 1883);
             r->send(200, "application/json", "{\"ok\":true}");
         });
 
@@ -119,9 +116,13 @@ void webServerInit() {
         doc["captive_portal"] = networkIsCaptivePortalActive();
         doc["ap_ssid"] = networkApSsid();
         doc["ip"] = networkGetIp();
-        doc["mqtt_configured"] = mqttIsConfigured();
-        doc["mqtt_connected"] = mqttIsConnected();
-        doc["mode"] = mqttIsConnected() ? "central" : "standalone";
+        doc["sta_ip"] = networkGetStaIp();
+        doc["wifi_connected"] = networkIsWifiConnected();
+        doc["wifi_connecting"] = networkIsWifiConnecting();
+        doc["ap_remaining_s"] = networkApRemainingSeconds();
+        doc["setup_complete"] = networkIsWifiConnected() && !networkIsWifiConnecting();
+        doc["central_active"] = centralTelemetryActive();
+        doc["mode"] = centralTelemetryActive() ? "central" : "standalone";
         String out; serializeJson(doc, out);
         r->send(200, "application/json", out);
     });

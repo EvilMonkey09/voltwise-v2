@@ -563,6 +563,83 @@ a:hover { color: var(--vw-accent-hover); }
 
 .vw-edge-wrap { max-width: 480px; margin: 0 auto; padding: 16px; }
 .vw-edge-shell { max-width: 480px; margin: 0 auto; padding: 16px; position: relative; z-index: 1; }
+.vw-edge-dash { max-width: 640px; }
+.vw-edge-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+@media (min-width: 520px) {
+  .vw-edge-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.vw-edge-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--vw-surface);
+  border: 1px solid var(--vw-border);
+  border-radius: var(--vw-radius);
+}
+.vw-edge-kpi-main {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.08), var(--vw-surface));
+  border-color: rgba(34, 211, 238, 0.2);
+}
+.vw-edge-kpi-main .vw-kpi-value { font-size: 28px; color: var(--vw-accent); }
+.vw-edge-card { margin-bottom: 12px; }
+.vw-edge-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.vw-edge-table { font-size: 11px; }
+.vw-edge-table th, .vw-edge-table td { padding: 6px 8px; white-space: nowrap; }
+.vw-edge-bars { display: flex; flex-direction: column; gap: 10px; }
+.vw-edge-bar-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.vw-edge-bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--vw-surface-2);
+  border: 1px solid var(--vw-border);
+  overflow: hidden;
+}
+.vw-edge-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  min-width: 0;
+}
+.vw-edge-bar.l1 { background: #f87171; }
+.vw-edge-bar.l2 { background: #60a5fa; }
+.vw-edge-bar.l3 { background: #fbbf24; }
+.vw-edge-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  margin: 0;
+  font-size: 12px;
+}
+.vw-edge-meta > div { min-width: 0; }
+.vw-edge-meta dt {
+  margin: 0 0 2px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--vw-muted);
+}
+.vw-edge-meta dd {
+  margin: 0;
+  font-family: var(--vw-mono);
+  font-size: 12px;
+  word-break: break-all;
+}
+.vw-edge-foot { margin-top: 8px; font-size: 11px; text-align: center; }
 .vw-edge-header {
   display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
   margin-bottom: 14px; padding-bottom: 12px;
@@ -890,6 +967,134 @@ a:hover { color: var(--vw-accent-hover); }
 }
 .vw-portal-feedback.ok { color: #4ade80; }
 .vw-portal-feedback.err { color: #f87171; }
+.vw-portal-success {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  text-align: left;
+  margin-bottom: 14px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-color: rgba(74, 222, 128, 0.35);
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.14), rgba(34, 211, 238, 0.08));
+  animation: vw-portal-pop 0.35s ease-out;
+}
+.vw-portal-success.hidden { display: none; }
+.vw-portal-success-icon {
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #052e16;
+  background: #4ade80;
+  border: none;
+  animation: vw-portal-check 0.45s ease-out;
+}
+.vw-portal-success-body { min-width: 0; }
+.vw-portal-success-body strong {
+  display: block;
+  font-size: 16px;
+  color: #e8e8ed;
+  margin-bottom: 4px;
+}
+.vw-portal-success-body p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.45;
+}
+.vw-portal-success-body code {
+  color: #4ade80;
+  font-family: var(--vw-mono);
+}
+.vw-portal-success-sub { font-size: 12px !important; color: #6b7280 !important; }
+.vw-portal-badge-ok {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.12);
+}
+.vw-portal-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  background: rgba(34, 211, 238, 0.08);
+  color: #67e8f9;
+  font-size: 13px;
+}
+.vw-portal-progress.hidden { display: none; }
+.vw-portal-progress .vw-portal-loading { margin: 0; padding: 0; min-height: 0; }
+.vw-portal-success h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  color: #e8e8ed;
+}
+.vw-portal-success-lead {
+  margin: 0 0 14px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+.vw-portal-success-ip {
+  margin: 0 0 10px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+.vw-portal-success-ip span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.vw-portal-success-ip a {
+  font-size: 18px;
+  font-weight: 600;
+  color: #4ade80;
+  text-decoration: none;
+  font-family: var(--vw-mono);
+}
+.vw-portal-success-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+.vw-portal-success-note {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+.vw-portal-connecting {
+  opacity: 0.75;
+  pointer-events: none;
+}
+.vw-portal-done {
+  opacity: 0.55;
+}
+.vw-portal-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+@keyframes vw-portal-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes vw-portal-check {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
 .vw-portal-foot {
   margin-top: 8px;
   padding: 12px 8px;

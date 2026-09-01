@@ -22,3 +22,4 @@ void telemetryInit();
 void telemetryUpdate(const PhaseReading readings[3], bool simulation);
 TelemetrySnapshot telemetryGetSnapshot();
 String telemetryBuildJson(const char* deviceId, const char* ip, const char* networkType);
+String telemetryBuildUdpJson(const char* deviceId, const char* ip, const char* networkType);

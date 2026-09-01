@@ -20,31 +20,12 @@
 {% endif %}
 <div id="flasher-warnings"></div>
 <div class="vw-banner vw-banner-info">{{ t('flasher.browser_hint') }}</div>
-{% if mqtt_internal %}
-<div class="vw-banner vw-banner-warn">
-    {% if suggested_lan_ip %}
-    {{ t('flasher.mqtt_warn') }} <strong>{{ suggested_lan_ip }}</strong>
-    {% else %}
-    {{ t('flasher.mqtt_warn_docker') }}
-    {% endif %}
-</div>
-{% endif %}
 
 <div class="vw-card" style="margin-bottom:12px;">
     <div class="vw-section-title">{{ t('flasher.svt_title') }}</div>
     <div class="vw-form-row">
         <label for="svt-name">{{ t('flasher.svt_name') }}</label>
         <input class="vw-input" id="svt-name" placeholder="SVT-Halle-A">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;">
-        <div class="vw-form-row" style="margin:0;">
-            <label for="svt-mqtt">{{ t('flasher.svt_mqtt') }}</label>
-            <input class="vw-input" id="svt-mqtt" value="{{ flasher_mqtt_host }}" placeholder="{{ suggested_lan_ip }}">
-        </div>
-        <div class="vw-form-row" style="margin:0;">
-            <label for="svt-port">{{ t('flasher.svt_port') }}</label>
-            <input class="vw-input" id="svt-port" type="number" value="{{ settings.mqtt_broker_port }}">
-        </div>
     </div>
     <p class="vw-muted" style="font-size:12px;margin-top:8px;">{{ t('flasher.svt_hint') }}</p>
 </div>

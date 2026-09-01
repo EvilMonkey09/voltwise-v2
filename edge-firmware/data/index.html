@@ -7,11 +7,11 @@
 <link rel="stylesheet" href="/voltwise.css">
 </head>
 <body>
-<div class="vw-edge-shell">
+<div class="vw-edge-shell vw-edge-dash">
     <header class="vw-edge-header">
         <div class="vw-edge-brand">
             <span class="vw-edge-mark">VoltWise</span>
-            <span class="vw-edge-sub">Edge</span>
+            <span class="vw-edge-sub" id="device-title">Edge</span>
         </div>
         <div class="vw-edge-pills">
             <span id="net-pill" class="vw-edge-pill">—</span>
@@ -19,16 +19,72 @@
         </div>
     </header>
 
-    <div id="status" class="vw-card vw-kpi-card">
-        <span class="vw-kpi-label">Gesamtleistung</span>
-        <span class="vw-kpi-value" id="total-p">—</span>
+    <div class="vw-edge-kpi-grid">
+        <div class="vw-edge-kpi vw-edge-kpi-main">
+            <span class="vw-kpi-label">Gesamtleistung</span>
+            <span class="vw-kpi-value" id="total-p">—</span>
+        </div>
+        <div class="vw-edge-kpi">
+            <span class="vw-kpi-label">Gesamtstrom</span>
+            <span class="vw-kpi-value" id="total-i">—</span>
+        </div>
+        <div class="vw-edge-kpi">
+            <span class="vw-kpi-label">Neutralstrom</span>
+            <span class="vw-kpi-value" id="neutral-i">—</span>
+        </div>
+        <div class="vw-edge-kpi">
+            <span class="vw-kpi-label">Energie Σ</span>
+            <span class="vw-kpi-value" id="total-e">—</span>
+        </div>
+        <div class="vw-edge-kpi">
+            <span class="vw-kpi-label">Ø Spannung</span>
+            <span class="vw-kpi-value" id="avg-u">—</span>
+        </div>
+        <div class="vw-edge-kpi">
+            <span class="vw-kpi-label">Ø Frequenz</span>
+            <span class="vw-kpi-value" id="avg-f">—</span>
+        </div>
     </div>
 
-    <div class="vw-card">
-        <table class="vw-table" id="tbl">
-            <thead><tr><th>Phase</th><th>U</th><th>I</th><th>P</th></tr></thead>
-            <tbody></tbody>
-        </table>
+    <div class="vw-card vw-edge-card">
+        <div class="vw-section-title">Leistungsverteilung</div>
+        <div class="vw-edge-bars" id="phase-bars">
+            <div class="vw-edge-bar-row"><span class="l1">L1</span><div class="vw-edge-bar-track"><div class="vw-edge-bar l1" id="bar-l1"></div></div><span id="pct-l1">—</span></div>
+            <div class="vw-edge-bar-row"><span class="l2">L2</span><div class="vw-edge-bar-track"><div class="vw-edge-bar l2" id="bar-l2"></div></div><span id="pct-l2">—</span></div>
+            <div class="vw-edge-bar-row"><span class="l3">L3</span><div class="vw-edge-bar-track"><div class="vw-edge-bar l3" id="bar-l3"></div></div><span id="pct-l3">—</span></div>
+        </div>
+    </div>
+
+    <div class="vw-card vw-edge-card">
+        <div class="vw-section-title">Phasen-Detail</div>
+        <div class="vw-edge-table-wrap">
+            <table class="vw-table vw-edge-table" id="tbl">
+                <thead>
+                    <tr>
+                        <th>Phase</th>
+                        <th>U</th>
+                        <th>I</th>
+                        <th>P</th>
+                        <th>E</th>
+                        <th>Hz</th>
+                        <th>cos φ</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="vw-card vw-edge-card">
+        <div class="vw-section-title">System</div>
+        <dl class="vw-edge-meta">
+            <div><dt>Geräte-ID</dt><dd id="meta-id">—</dd></div>
+            <div><dt>IP-Adresse</dt><dd id="meta-ip">—</dd></div>
+            <div><dt>Netzwerk</dt><dd id="meta-net">—</dd></div>
+            <div><dt>Uptime</dt><dd id="meta-uptime">—</dd></div>
+            <div><dt>Firmware</dt><dd id="meta-fw">—</dd></div>
+            <div><dt>Modus</dt><dd id="meta-mode">—</dd></div>
+        </dl>
     </div>
 
     <div class="vw-edge-actions">
@@ -36,41 +92,129 @@
         <button type="button" class="vw-btn vw-btn-ghost vw-btn-sm" id="btn-setup">WLAN einrichten</button>
     </div>
     <p id="setup-msg" class="vw-edge-msg vw-muted"></p>
+    <p class="vw-edge-foot vw-muted" id="last-update">—</p>
 </div>
 <script>
-async function loadNet(){
-  const r=await fetch('/api/network/status');const d=await r.json();
-  const pill=document.getElementById('net-pill');
-  if(d.captive_portal){pill.textContent='Setup';pill.className='vw-edge-pill vw-edge-pill-setup';}
-  else if(d.online){pill.textContent='Online';pill.className='vw-edge-pill vw-edge-pill-online';}
-  else{pill.textContent='Offline';pill.className='vw-edge-pill vw-edge-pill-offline';}
-  const mode=document.getElementById('mode-pill');
-  if(d.mqtt_connected){mode.textContent='Central';mode.className='vw-edge-pill vw-edge-pill-central';}
-  else if(d.mqtt_configured){mode.textContent='Central (offline)';mode.className='vw-edge-pill vw-edge-pill-setup';}
-  else{mode.textContent='Standalone';mode.className='vw-edge-pill vw-edge-pill-mode';}
+function fmtUptime(s) {
+    s = Math.floor(s || 0);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
 }
-async function refresh(){
-  const r=await fetch('/api/data');const d=await r.json();
-  const total=(d.phases||[]).reduce((s,p)=>s+(p.power||0),0);
-  document.getElementById('total-p').textContent=total.toFixed(1)+' W';
-  const tb=document.querySelector('#tbl tbody');tb.innerHTML='';
-  (d.phases||[]).forEach(p=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="${p.label.toLowerCase()}">${p.label}</td><td>${p.voltage.toFixed(1)} V</td><td>${p.current.toFixed(3)} A</td><td>${p.power.toFixed(1)} W</td>`;
-    tb.appendChild(tr);
-  });
+function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
 }
-document.getElementById('btn-setup').onclick=async()=>{
-  const msg=document.getElementById('setup-msg');
-  msg.textContent='Starte Hotspot…';
-  const r=await fetch('/api/network/setup-mode',{method:'POST'});
-  const j=await r.json();
-  if(j.ok){
-    msg.textContent='Hotspot '+j.ap_ssid+' aktiv. Mit dem Handy verbinden und Setup-Seite öffnen.';
-    if(j.ip) setTimeout(()=>{window.location.href='http://'+j.ip+'/';},1500);
-  } else msg.textContent='Setup-Modus konnte nicht gestartet werden.';
+async function loadNet() {
+    const r = await fetch('/api/network/status');
+    const d = await r.json();
+    const pill = document.getElementById('net-pill');
+    if (d.captive_portal) {
+        pill.textContent = 'Setup';
+        pill.className = 'vw-edge-pill vw-edge-pill-setup';
+    } else if (d.online) {
+        pill.textContent = 'Online';
+        pill.className = 'vw-edge-pill vw-edge-pill-online';
+    } else {
+        pill.textContent = 'Offline';
+        pill.className = 'vw-edge-pill vw-edge-pill-offline';
+    }
+    const mode = document.getElementById('mode-pill');
+    if (d.central_active) {
+        mode.textContent = 'Central';
+        mode.className = 'vw-edge-pill vw-edge-pill-central';
+    } else if (d.online) {
+        mode.textContent = 'Central (sende…)';
+        mode.className = 'vw-edge-pill vw-edge-pill-setup';
+    } else {
+        mode.textContent = 'Lokal';
+        mode.className = 'vw-edge-pill vw-edge-pill-mode';
+    }
+    setText('meta-ip', d.sta_ip || d.ip || '—');
+    setText('meta-mode', d.central_active ? 'Central aktiv' : (d.online ? 'Telemetrie senden' : 'Nur lokal'));
+}
+async function loadInfo() {
+    try {
+        const r = await fetch('/api/node/info');
+        const d = await r.json();
+        setText('meta-id', d.node_id || '—');
+        setText('meta-fw', d.version || '—');
+        const title = document.getElementById('device-title');
+        if (title) title.textContent = d.display_name || d.node_name || 'Edge';
+    } catch (e) { /* ignore */ }
+}
+async function refresh() {
+    const r = await fetch('/api/data');
+    const d = await r.json();
+    const phases = d.phases || [];
+    const totalP = phases.reduce((s, p) => s + (p.power || 0), 0);
+    const totalI = phases.reduce((s, p) => s + (p.current || 0), 0);
+    const totalE = phases.reduce((s, p) => s + (p.energy || 0), 0);
+    const avgU = phases.length ? phases.reduce((s, p) => s + (p.voltage || 0), 0) / phases.length : 0;
+    const avgF = phases.length ? phases.reduce((s, p) => s + (p.frequency || 0), 0) / phases.length : 0;
+
+    setText('total-p', totalP.toFixed(1) + ' W');
+    setText('total-i', totalI.toFixed(3) + ' A');
+    setText('neutral-i', (d.neutral_current_a != null ? d.neutral_current_a : 0).toFixed(3) + ' A');
+    setText('total-e', totalE.toFixed(2) + ' kWh');
+    setText('avg-u', avgU ? avgU.toFixed(1) + ' V' : '—');
+    setText('avg-f', avgF ? avgF.toFixed(2) + ' Hz' : '—');
+
+    const byLabel = {};
+    phases.forEach(p => { byLabel[p.label] = p; });
+    ['L1', 'L2', 'L3'].forEach(label => {
+        const p = byLabel[label];
+        const bar = document.getElementById('bar-' + label.toLowerCase());
+        const pct = document.getElementById('pct-' + label.toLowerCase());
+        const share = totalP > 0 && p ? (p.power / totalP) * 100 : 0;
+        if (bar) bar.style.width = share.toFixed(1) + '%';
+        if (pct) pct.textContent = p ? share.toFixed(0) + '%' : '—';
+    });
+
+    const tb = document.querySelector('#tbl tbody');
+    tb.innerHTML = '';
+    phases.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="${p.label.toLowerCase()}">${p.label}</td>
+            <td>${p.voltage.toFixed(1)} V</td>
+            <td>${p.current.toFixed(3)} A</td>
+            <td>${p.power.toFixed(1)} W</td>
+            <td>${(p.energy || 0).toFixed(2)} kWh</td>
+            <td>${(p.frequency || 0).toFixed(2)}</td>
+            <td>${(p.power_factor || 0).toFixed(2)}</td>`;
+        tb.appendChild(tr);
+    });
+
+    const sys = d.system || {};
+    setText('meta-net', (sys.network_type || '—') + (sys.simulation ? ' · Simulation' : ''));
+    setText('meta-uptime', fmtUptime(sys.uptime_s));
+    if (sys.device_name) {
+        const title = document.getElementById('device-title');
+        if (title) title.textContent = sys.device_name;
+    }
+    setText('last-update', 'Aktualisiert ' + new Date().toLocaleTimeString('de-DE'));
+}
+document.getElementById('btn-setup').onclick = async () => {
+    const msg = document.getElementById('setup-msg');
+    msg.textContent = 'Starte Hotspot…';
+    const r = await fetch('/api/network/setup-mode', { method: 'POST' });
+    const j = await r.json();
+    if (j.ok) {
+        msg.textContent = 'Hotspot ' + j.ap_ssid + ' aktiv. Mit dem Handy verbinden und Setup-Seite öffnen.';
+        if (j.ip) setTimeout(() => { window.location.href = 'http://' + j.ip + '/'; }, 1500);
+    } else {
+        msg.textContent = 'Setup-Modus konnte nicht gestartet werden.';
+    }
 };
-loadNet();refresh();setInterval(refresh,1000);setInterval(loadNet,5000);
+loadInfo();
+loadNet();
+refresh();
+setInterval(refresh, 1000);
+setInterval(loadNet, 5000);
 </script>
 </body>
 </html>

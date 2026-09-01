@@ -3,7 +3,7 @@
 #include "config.h"
 #include "nvs_config.h"
 #include "pzem_reader.h"
-#include "mqtt_client.h"
+#include "central_telemetry.h"
 #include "network_manager.h"
 #include "web_server.h"
 #include "telemetry.h"
@@ -20,11 +20,11 @@ void setup() {
     networkInit();
     webServerInit();
     webServerStart();
-    mqttInit();
+    centralTelemetryInit();
     otaInit();
 
     xTaskCreatePinnedToCore(pzemTask, "pzem", 4096, NULL, 2, NULL, 1);
-    xTaskCreatePinnedToCore(mqttTask, "mqtt", 6144, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(centralTelemetryTask, "central", 6144, NULL, 1, NULL, 1);
     xTaskCreatePinnedToCore(networkTask, "network", 6144, NULL, 2, NULL, 0);
 }
 

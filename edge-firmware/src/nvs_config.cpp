@@ -19,38 +19,6 @@ void nvsConfigInit() {
 
 String nvsGetDeviceId() { return prefs.getString("device_id", "unknown"); }
 String nvsGetDeviceName() { return prefs.getString("device_name", ""); }
-String nvsGetMqttBroker() { return prefs.getString("mqtt_host", ""); }
-uint16_t nvsGetMqttPort() { return prefs.getUShort("mqtt_port", 1883); }
-
-bool nvsIsUsableMqttBroker(const String& host) {
-    String h = host;
-    h.trim();
-    if (h.length() == 0 || h.length() > 127) return false;
-    for (size_t i = 0; i < h.length(); i++) {
-        char c = h.charAt(i);
-        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-            (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '_') {
-            continue;
-        }
-        return false;
-    }
-    String lower = h;
-    lower.toLowerCase();
-    if (lower == "mosquitto" || lower == "localhost" || lower == "127.0.0.1" ||
-        lower == "host.docker.internal" || lower == "0.0.0.0") {
-        return false;
-    }
-    return true;
-}
-
-void nvsSetMqttBroker(const String& host, uint16_t port) {
-    String h = host;
-    h.trim();
-    if (!nvsIsUsableMqttBroker(h)) h = "";
-    prefs.putString("mqtt_host", h);
-    prefs.putUShort("mqtt_port", port);
-}
-
 void nvsSetDeviceName(const String& name) { prefs.putString("device_name", name); }
 
 int nvsGetWifiProfiles(WifiProfile* out, int maxCount) {
