@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
+import ssl
 import time
 import urllib.error
 import urllib.request
@@ -32,6 +34,16 @@ def parse_ver(s: str) -> Version:
         return Version("0")
 
 
+def _ssl_context() -> ssl.SSLContext:
+    """Use certifi CA bundle (needed on macOS Python.org builds and PyInstaller)."""
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
+
+
 def fetch_latest_release_dict() -> dict | None:
     repo = github_repo()
     url = f"https://api.github.com/repos/{repo}/releases/latest"
@@ -43,9 +55,10 @@ def fetch_latest_release_dict() -> dict | None:
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=20, context=_ssl_context()) as resp:
             return json.loads(resp.read().decode())
-    except (urllib.error.URLError, json.JSONDecodeError, TimeoutError, OSError):
+    except (urllib.error.URLError, json.JSONDecodeError, TimeoutError, OSError) as exc:
+        logging.warning("GitHub release fetch failed: %s", exc)
         return None
 
 
