@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 jobs:
-  release:
+  firmware:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,9 +22,143 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install platformio
-      - run: chmod +x tools/build_firmware.sh && ./tools/build_firmware.sh
-      - name: Package release assets
+      - name: Sync VERSION
+        shell: bash
         run: |
+          V="${GITHUB_REF_NAME#v}"
+          echo "$V" > server/VERSION
+      - run: chmod +x tools/build_firmware.sh && ./tools/build_firmware.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-artifacts
+          path: firmware-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+
+  desktop:
+    name: Desktop — ${{ matrix.os }}
+    needs: [firmware]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set VERSION
+        shell: bash
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          echo "$V" > server/VERSION
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware-artifacts
+          path: firmware-artifacts
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps & icons
+        shell: bash
+        run: |
+          pip install -r server/requirements.txt pyinstaller
+          python tools/generate_icons.py
+      - name: Build Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd server
+          pyinstaller \
+            --noconfirm \
+            --clean \
+            --windowed \
+            --onefile \
+            --name "VoltWise-Central-Windows" \
+            --icon "icon.ico" \
+            --add-data "templates;templates" \
+            --add-data "static;static" \
+            --add-data "VERSION;." \
+            --add-data "logo.png;." \
+            --add-data "../firmware-artifacts;firmware-artifacts" \
+            --hidden-import packaging.version \
+            --hidden-import packaging.specifiers \
+            --hidden-import zeroconf \
+            --hidden-import pystray \
+            --hidden-import PIL \
+            run_desktop.py
+      - name: Build macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cd server
+          ICON_ARG=()
+          if [ -f icon.icns ]; then ICON_ARG=(--icon icon.icns); elif [ -f icon.ico ]; then ICON_ARG=(--icon icon.ico); fi
+          pyinstaller \
+            --noconfirm \
+            --clean \
+            --windowed \
+            --noconsole \
+            --name "VoltWise" \
+            "${ICON_ARG[@]}" \
+            --add-data "templates:templates" \
+            --add-data "static:static" \
+            --add-data "VERSION:." \
+            --add-data "logo.png:." \
+            --add-data "../firmware-artifacts:firmware-artifacts" \
+            --hidden-import packaging.version \
+            --hidden-import packaging.specifiers \
+            --hidden-import zeroconf \
+            --hidden-import pystray \
+            --hidden-import PIL \
+            run_desktop.py
+          brew install create-dmg
+          rm -f dist/VoltWise.dmg || true
+          create-dmg \
+            --volname "VoltWise Central" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --app-drop-link 600 185 \
+            "dist/VoltWise.dmg" \
+            "dist/VoltWise.app" || true
+          # create-dmg exits non-zero if Finder assistance fails in CI; accept DMG if present
+          test -f dist/VoltWise.dmg
+      - name: Stage artifact
+        shell: bash
+        run: |
+          mkdir -p staging
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            mv server/dist/VoltWise-Central-Windows.exe staging/VoltWise-Central-Windows-x86_64.exe
+          else
+            mv server/dist/VoltWise.dmg staging/VoltWise-Central-macOS.dmg
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ runner.os }}
+          path: staging/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    needs: [firmware, desktop]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware-artifacts
+          path: firmware-artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-Windows
+          path: dl/win
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-macOS
+          path: dl/mac
+      - name: Package release assets
+        shell: bash
+        run: |
+          set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
           mkdir -p dist
           for env in esp32dev wt32-eth01 simulation; do
@@ -32,7 +166,9 @@ jobs:
             cp "firmware-artifacts/release/firmware-${env}-${VERSION}.bin" "dist/" 2>/dev/null || \
               cp "firmware-artifacts/release/firmware-${env}.bin" "dist/firmware-${env}-${VERSION}.bin"
           done
-          ls -la dist/
+          cp dl/win/VoltWise-Central-Windows-x86_64.exe dist/
+          cp dl/mac/VoltWise-Central-macOS.dmg dist/
+          ls -lah dist/
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

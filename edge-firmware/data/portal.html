@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#08080c">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>VoltWise Setup</title>
+<title>VoltWise WLAN</title>
 <link rel="stylesheet" href="/voltwise.css">
 </head>
 <body class="vw-portal">
@@ -14,19 +14,14 @@
     <header class="vw-portal-top">
         <div class="vw-portal-brand">
             <span class="vw-portal-logo">VoltWise</span>
-            <span class="vw-portal-tag">Setup</span>
+            <span class="vw-portal-tag">WLAN</span>
         </div>
         <span class="vw-portal-badge" id="portal-badge">Hotspot aktiv</span>
     </header>
 
     <section class="vw-portal-hero">
-        <h1>Stromverteiler einrichten</h1>
-        <p>Messung funktioniert sofort lokal. WLAN fürs Heimnetz — Central findet das Gerät automatisch.</p>
-        <div class="vw-portal-steps" id="portal-steps">
-            <span class="on" id="step-device">1 · Gerät</span>
-            <span class="sep">›</span>
-            <span id="step-wifi">2 · WLAN</span>
-        </div>
+        <h1>WLAN verbinden</h1>
+        <p>Danach öffnest du die Geräte-IP im Heimnetz — dort startet der Setup-Wizard (Name, Profil, Sensoren).</p>
         <div class="vw-portal-meta" id="ap-info">Lade Status…</div>
     </section>
 
@@ -34,32 +29,15 @@
         <div class="vw-portal-success-icon">✓</div>
         <div class="vw-portal-success-body">
             <strong>WLAN verbunden!</strong>
-            <p>Gerät ist im Heimnetz unter <code id="success-ip">—</code> erreichbar.</p>
+            <p>Als Nächstes Setup unter <code id="success-ip">—</code> öffnen.</p>
             <p class="vw-portal-success-sub" id="success-ap-hint">Hotspot bleibt noch kurz aktiv.</p>
         </div>
     </div>
 
-    <section class="vw-portal-card" id="device-card">
-        <div class="vw-portal-card-head">
-            <span class="vw-portal-icon">⚡</span>
-            <div>
-                <h2>Gerät</h2>
-                <p>Name für Anzeige (optional)</p>
-            </div>
-        </div>
-        <label class="vw-portal-field">
-            <span>Anzeigename</span>
-            <input id="name" type="text" placeholder="z. B. SVT-Halle-A" autocomplete="off">
-        </label>
-        <button type="button" class="vw-portal-btn ghost" onclick="saveDevice()">Name speichern</button>
-        <p id="device-msg" class="vw-portal-feedback"></p>
-    </section>
-
     <section class="vw-portal-card" id="wifi-card">
         <div class="vw-portal-card-head">
-            <span class="vw-portal-icon">📶</span>
             <div>
-                <h2>WLAN verbinden</h2>
+                <h2>Heimnetz wählen</h2>
                 <p id="wifi-card-lead">Netzwerk wählen und verbinden</p>
             </div>
         </div>
@@ -84,7 +62,7 @@
     </section>
 
     <footer class="vw-portal-foot" id="portal-foot">
-        VoltWise Edge · Nach erfolgreicher Verbindung bleibt der Hotspot noch ca. 30 Sekunden aktiv.
+        VoltWise Edge · Nach der Verbindung Setup-Wizard unter der Geräte-IP.
     </footer>
 </div>
 <script>
@@ -123,23 +101,21 @@ function showSuccess(d) {
     const ipEl = document.getElementById('success-ip');
     const hint = document.getElementById('success-ap-hint');
     const badge = document.getElementById('portal-badge');
-    const stepWifi = document.getElementById('step-wifi');
     const foot = document.getElementById('portal-foot');
     const staIp = d.sta_ip || d.ip || '—';
 
     banner.classList.remove('hidden');
-    ipEl.textContent = staIp;
+    ipEl.textContent = 'http://' + staIp + '/';
     badge.textContent = 'Verbunden';
     badge.className = 'vw-portal-badge vw-portal-badge-ok';
-    stepWifi.classList.add('on');
     document.getElementById('wifi-card-lead').textContent = 'Erfolgreich verbunden';
 
     if (d.ap_remaining_s > 0) {
-        hint.textContent = `Hotspot ${d.ap_ssid || 'VoltWise-Setup'} bleibt noch ${d.ap_remaining_s} s aktiv.`;
-        foot.textContent = `Hotspot schließt in ca. ${d.ap_remaining_s} s. Danach Gerät unter http://${staIp} im Heimnetz öffnen.`;
+        hint.textContent = `Hotspot bleibt noch ${d.ap_remaining_s} s — Setup unter der IP öffnen.`;
+        foot.textContent = `Nächster Schritt: http://${staIp}/ (Setup-Wizard).`;
     } else {
-        hint.textContent = 'Hotspot wurde beendet. Gerät nur noch im Heimnetz erreichbar.';
-        foot.textContent = `Setup abgeschlossen. Gerät unter http://${staIp} im Heimnetz öffnen.`;
+        hint.textContent = 'Hotspot beendet. Setup im Heimnetz öffnen.';
+        foot.textContent = `Setup: http://${staIp}/`;
     }
 
     hideConnectProgress();
@@ -152,7 +128,7 @@ function updateStatusUi(d) {
 
     if (d.wifi_connected && d.sta_ip) {
         showSuccess(d);
-        apInfo.innerHTML = `<strong>Verbunden</strong> · Heimnetz <code>http://${d.sta_ip}</code>`;
+        apInfo.innerHTML = `<strong>Verbunden</strong> · Setup: <code>http://${d.sta_ip}/</code>`;
         return;
     }
 
@@ -178,26 +154,6 @@ function startStatusPolling() {
     if (statusPollTimer) clearInterval(statusPollTimer);
     pollStatus();
     statusPollTimer = setInterval(pollStatus, 1000);
-}
-async function loadSettings() {
-    try {
-        const r = await fetch('/api/settings');
-        const d = await r.json();
-        document.getElementById('name').value = d.device_name || '';
-    } catch (e) { /* ignore */ }
-}
-async function saveDevice() {
-    setFeedback('device-msg', 'Speichere…');
-    try {
-        await fetch('/api/settings', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ device_name: document.getElementById('name').value }),
-        });
-        setFeedback('device-msg', 'Gespeichert.', 'ok');
-    } catch (e) {
-        setFeedback('device-msg', 'Speichern fehlgeschlagen.', 'err');
-    }
 }
 async function scan() {
     const el = document.getElementById('networks');
@@ -280,7 +236,6 @@ async function connect() {
         setFeedback('wifi-msg', 'Verbindung fehlgeschlagen.', 'err');
     }
 }
-loadSettings();
 startStatusPolling();
 scan();
 </script>

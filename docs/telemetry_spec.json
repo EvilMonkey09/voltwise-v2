@@ -28,7 +28,17 @@
     "neutral_current_a": {
       "type": "number",
       "minimum": 0,
-      "description": "Calculated neutral conductor current in amperes."
+      "description": "Neutral conductor current in amperes (calculated or measured)."
+    },
+    "neutral_source": {
+      "type": "string",
+      "enum": ["calculated", "measured"],
+      "description": "Whether neutral_current_a is derived from phases or from PZEM address 4."
+    },
+    "sensor_profile": {
+      "type": "string",
+      "enum": ["sensors_3", "sensors_4"],
+      "description": "Edge measurement profile."
     },
     "system": {
       "$ref": "#/$defs/system"
@@ -106,6 +116,10 @@
           "type": "boolean",
           "default": false,
           "description": "True when readings are synthetic."
+        },
+        "device_name": {
+          "type": "string",
+          "description": "Optional display name."
         }
       }
     }

@@ -87,6 +87,14 @@
         </dl>
     </div>
 
+    <div id="pzem-hint" class="vw-card vw-edge-card hidden" style="border-color:var(--vw-warning);">
+        <div class="vw-section-title">Sensor-Setup nötig</div>
+        <p class="vw-muted vw-edge-hint" id="pzem-hint-text">
+            Nicht alle PZEM-Adressen 1/2/3 antworten.
+        </p>
+        <a class="vw-btn vw-btn-primary vw-btn-sm" href="/settings#pzem-card">Sensoren einrichten</a>
+    </div>
+
     <div class="vw-edge-actions">
         <a class="vw-btn vw-btn-ghost vw-btn-sm" href="/settings">Einstellungen</a>
         <button type="button" class="vw-btn vw-btn-ghost vw-btn-sm" id="btn-setup">WLAN einrichten</button>
@@ -210,11 +218,37 @@ document.getElementById('btn-setup').onclick = async () => {
         msg.textContent = 'Setup-Modus konnte nicht gestartet werden.';
     }
 };
+async function loadPzemHint() {
+    const box = document.getElementById('pzem-hint');
+    const text = document.getElementById('pzem-hint-text');
+    if (!box) return;
+    try {
+        const r = await fetch('/api/pzem/status?refresh=1');
+        const d = await r.json();
+        if (d.ok) {
+            box.classList.add('hidden');
+            return;
+        }
+        const found = (d.found || []).map(f => f.address);
+        const expected = d.expected || [1, 2, 3];
+        const missing = expected.filter(a => !found.includes(a));
+        if (!d.scanned || !found.length) {
+            text.textContent = 'Keine PZEM-Sensoren erkannt. Setup unter Einstellungen oder /setup.';
+        } else if (missing.length) {
+            text.textContent = 'Fehlende PZEM-Adressen: ' + missing.join(', ') + '.';
+        } else {
+            text.textContent = 'PZEM-Bus unvollständig — unter Einstellungen prüfen.';
+        }
+        box.classList.remove('hidden');
+    } catch (e) { /* ignore */ }
+}
 loadInfo();
 loadNet();
 refresh();
+loadPzemHint();
 setInterval(refresh, 1000);
 setInterval(loadNet, 5000);
+setInterval(loadPzemHint, 15000);
 </script>
 </body>
 </html>

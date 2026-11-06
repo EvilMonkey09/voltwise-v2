@@ -29,6 +29,8 @@ class TelemetryPayload(BaseModel):
     timestamp: float
     phases: list[PhaseMetrics] = Field(min_length=1, max_length=3)
     neutral_current_a: float | None = Field(default=None, ge=0)
+    neutral_source: Literal["calculated", "measured"] | None = None
+    sensor_profile: Literal["sensors_3", "sensors_4"] | None = None
     system: SystemStatus
 
     def phases_by_label(self) -> dict[str, PhaseMetrics]:

@@ -18,9 +18,18 @@
     <div class="vw-card">
         <div class="vw-section-title">Gerät</div>
         <div class="vw-form-row"><label>Anzeigename</label><input class="vw-input" id="name"></div>
-        <p class="vw-muted vw-edge-hint">Central findet das Gerät automatisch im WLAN (UDP/mDNS) — keine IP-Konfiguration nötig.</p>
-        <button class="vw-btn vw-btn-primary vw-btn-sm" onclick="save()">Speichern</button>
+        <p class="vw-muted vw-edge-hint">Central findet das Gerät automatisch im WLAN (UDP/mDNS).</p>
+        <button class="vw-btn vw-btn-primary vw-btn-sm" onclick="saveDevice()">Speichern</button>
         <p id="msg" class="vw-edge-msg"></p>
+    </div>
+
+    <div class="vw-card">
+        <div class="vw-section-title">Messprofil</div>
+        <p class="vw-muted vw-edge-hint">Nach Profilwechsel PZEM-Adressen prüfen (siehe unten).</p>
+        <label class="vw-form-row"><input type="radio" name="profile" value="sensors_3"> 3 Sensoren (L1, L2, L3 + N gerechnet)</label>
+        <label class="vw-form-row"><input type="radio" name="profile" value="sensors_4"> 4 Sensoren (L1, L2, L3, N)</label>
+        <button class="vw-btn vw-btn-primary vw-btn-sm" onclick="saveProfile()">Profil speichern</button>
+        <p id="profile-msg" class="vw-edge-msg"></p>
     </div>
 
     <div class="vw-card">
@@ -30,18 +39,83 @@
         <p id="setup-msg" class="vw-edge-msg"></p>
     </div>
 
+    <div class="vw-card" id="pzem-card">
+        <div class="vw-section-title">Sensoren (PZEM)</div>
+        <p class="vw-muted vw-edge-hint">Adresse setzen nur mit genau einem Modul am UART (GPIO 16/17).</p>
+        <p id="pzem-status" class="vw-edge-msg">Status wird geladen…</p>
+        <div id="pzem-found" class="vw-muted vw-edge-hint"></div>
+        <div class="vw-form-row" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;">
+            <button type="button" class="vw-btn vw-btn-ghost vw-btn-sm" id="btn-pzem-scan">Bus scannen</button>
+            <button type="button" class="vw-btn vw-btn-ghost vw-btn-sm" id="btn-pzem-check">Erwartete prüfen</button>
+            <button type="button" class="vw-btn vw-btn-primary vw-btn-sm" data-addr="1">Adr 1 (L1)</button>
+            <button type="button" class="vw-btn vw-btn-primary vw-btn-sm" data-addr="2">Adr 2 (L2)</button>
+            <button type="button" class="vw-btn vw-btn-primary vw-btn-sm" data-addr="3">Adr 3 (L3)</button>
+            <button type="button" class="vw-btn vw-btn-primary vw-btn-sm" data-addr="4" id="btn-addr-4">Adr 4 (N)</button>
+        </div>
+        <p id="pzem-set-msg" class="vw-edge-msg"></p>
+        <p class="vw-edge-nav" style="margin-top:12px;"><a href="/setup">Setup-Wizard erneut öffnen</a></p>
+    </div>
+
+    <div class="vw-card">
+        <div class="vw-section-title">Werkseinstellungen</div>
+        <p class="vw-muted vw-edge-hint">Löscht WLAN, Name, Profil und Setup-Status. Geräte-ID bleibt. Danach Neustart und Setup-Wizard.</p>
+        <button type="button" class="vw-btn vw-btn-danger vw-btn-sm" id="btn-factory">Auf Werkseinstellungen zurücksetzen</button>
+        <p id="factory-msg" class="vw-edge-msg"></p>
+    </div>
+
     <p class="vw-edge-nav"><a href="/">← Zurück zum Dashboard</a></p>
 </div>
 <script>
-async function load(){
-  const r=await fetch('/api/settings');const d=await r.json();
-  document.getElementById('name').value=d.device_name||'';
+function renderPzemStatus(d) {
+  const st = document.getElementById('pzem-status');
+  const foundEl = document.getElementById('pzem-found');
+  const found = d.found || [];
+  const expected = d.expected || [];
+  document.getElementById('btn-addr-4').style.display = (d.profile === 'sensors_4' || expected.includes(4)) ? '' : 'none';
+  if (!d.scanned) {
+    st.textContent = 'Noch kein Scan.';
+    foundEl.textContent = '';
+    return;
+  }
+  st.textContent = d.ok
+    ? 'OK — erwartete Adressen gefunden (' + expected.join(', ') + ').'
+    : 'Unvollständig. Erwartet: ' + expected.join(', ') + '.';
+  foundEl.textContent = found.length
+    ? 'Gefunden: ' + found.map(f => 'Adr ' + f.address + (f.voltage != null ? ' (' + f.voltage + ' V)' : '')).join(', ')
+    : 'Gefunden: —';
 }
-async function save(){
+
+async function loadPzemStatus(refresh) {
+  const r = await fetch('/api/pzem/status' + (refresh ? '?refresh=1' : ''));
+  const d = await r.json();
+  renderPzemStatus(d);
+  return d;
+}
+
+async function load(){
+  const r = await fetch('/api/settings');
+  const d = await r.json();
+  document.getElementById('name').value = d.device_name || '';
+  const p = d.sensor_profile || 'sensors_3';
+  document.querySelectorAll('input[name=profile]').forEach(el => { el.checked = el.value === p; });
+  try { await loadPzemStatus(false); } catch (e) {
+    document.getElementById('pzem-status').textContent = 'Status nicht erreichbar.';
+  }
+}
+async function saveDevice(){
   await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
     device_name:document.getElementById('name').value
   })});
   document.getElementById('msg').textContent='Gespeichert.';
+}
+async function saveProfile(){
+  const el = document.querySelector('input[name=profile]:checked');
+  if (!el) return;
+  await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    sensor_profile: el.value
+  })});
+  document.getElementById('profile-msg').textContent='Profil gespeichert — Bus prüfen.';
+  await loadPzemStatus(true);
 }
 document.getElementById('btn-setup').onclick=async()=>{
   const msg=document.getElementById('setup-msg');
@@ -50,6 +124,43 @@ document.getElementById('btn-setup').onclick=async()=>{
   const j=await r.json();
   if(j.ok) msg.textContent='Hotspot '+j.ap_ssid+' aktiv. Handy verbinden → http://'+(j.ip||'192.168.4.1');
   else msg.textContent='Fehler beim Starten.';
+};
+document.getElementById('btn-pzem-scan').onclick = async () => {
+  const d = await (await fetch('/api/pzem/scan',{method:'POST'})).json();
+  renderPzemStatus(d);
+};
+document.getElementById('btn-pzem-check').onclick = async () => { await loadPzemStatus(true); };
+document.querySelectorAll('[data-addr]').forEach(btn => {
+  btn.onclick = async () => {
+    const addr = parseInt(btn.getAttribute('data-addr'), 10);
+    const msg = document.getElementById('pzem-set-msg');
+    msg.textContent = 'Setze Adresse ' + addr + '…';
+    btn.disabled = true;
+    try {
+      const r = await fetch('/api/pzem/set-address', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: addr })
+      });
+      const d = await r.json();
+      msg.textContent = d.ok
+        ? (d.verified ? 'Adresse ' + addr + ' OK.' : 'Gesendet — bitte scannen.')
+        : 'Setzen fehlgeschlagen.';
+      await loadPzemStatus(true);
+    } catch (e) { msg.textContent = 'Fehler.'; }
+    btn.disabled = false;
+  };
+});
+document.getElementById('btn-factory').onclick = async () => {
+  if (!confirm('Wirklich auf Werkseinstellungen zurücksetzen? Das Gerät startet neu.')) return;
+  const msg = document.getElementById('factory-msg');
+  msg.textContent = 'Setze zurück…';
+  try {
+    await fetch('/api/factory-reset', { method: 'POST' });
+    msg.textContent = 'Neustart…';
+  } catch (e) {
+    msg.textContent = 'Neustart läuft — Seite neu laden, wenn erreichbar.';
+  }
 };
 load();
 </script>

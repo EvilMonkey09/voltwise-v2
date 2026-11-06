@@ -11,17 +11,27 @@ void telemetryInit() {
 }
 
 static float calcNeutral(float i1, float i2, float i3) {
-    float val = (i1*i1 + i2*i2 + i3*i3) - (i1*i2 + i2*i3 + i3*i1);
+    float val = (i1 * i1 + i2 * i2 + i3 * i3) - (i1 * i2 + i2 * i3 + i3 * i1);
     return sqrtf(fmaxf(0.0f, val));
 }
 
-void telemetryUpdate(const PhaseReading readings[3], bool simulation) {
+void telemetryUpdate(const PhaseReading phases[3], const PhaseReading* neutralOrNull, bool simulation) {
     if (xSemaphoreTake(snapMutex, pdMS_TO_TICKS(50))) {
-        for (int i = 0; i < 3; i++) snapshot.phases[i] = readings[i];
+        for (int i = 0; i < 3; i++) snapshot.phases[i] = phases[i];
         snapshot.simulation = simulation;
         snapshot.timestampMs = millis();
-        if (readings[0].valid && readings[1].valid && readings[2].valid) {
-            snapshot.neutralCurrent = calcNeutral(readings[0].current, readings[1].current, readings[2].current);
+        if (neutralOrNull && neutralOrNull->valid) {
+            snapshot.neutral = *neutralOrNull;
+            snapshot.neutralMeasured = true;
+            snapshot.neutralCurrent = neutralOrNull->current;
+        } else {
+            snapshot.neutral = PhaseReading();
+            snapshot.neutralMeasured = false;
+            if (phases[0].valid && phases[1].valid && phases[2].valid) {
+                snapshot.neutralCurrent = calcNeutral(phases[0].current, phases[1].current, phases[2].current);
+            } else {
+                snapshot.neutralCurrent = 0;
+            }
         }
         xSemaphoreGive(snapMutex);
     }
@@ -55,6 +65,8 @@ String telemetryBuildJson(const char* deviceId, const char* ip, const char* netw
         p["power_factor"] = snap.phases[i].powerFactor;
     }
     doc["neutral_current_a"] = roundf(snap.neutralCurrent * 1000) / 1000.0;
+    doc["neutral_source"] = snap.neutralMeasured ? "measured" : "calculated";
+    doc["sensor_profile"] = nvsGetSensorProfile();
     JsonObject sys = doc["system"].to<JsonObject>();
     sys["uptime_s"] = millis() / 1000;
     sys["ip"] = ip;

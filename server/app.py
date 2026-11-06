@@ -52,7 +52,24 @@ def get_data_dir() -> str:
 DATA_DIR = get_data_dir()
 DB_PATH = os.path.join(DATA_DIR, "dashboard.db")
 LOG_PATH = os.path.join(DATA_DIR, "debug.log")
-FIRMWARE_DIR = Path(__file__).resolve().parent.parent / "firmware-artifacts"
+
+
+def resolve_firmware_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        meipass = Path(getattr(sys, "_MEIPASS", "."))
+        exe_dir = Path(sys.executable).resolve().parent
+        for candidate in (
+            meipass / "firmware-artifacts",
+            exe_dir / "firmware-artifacts",
+            exe_dir.parent / "Resources" / "firmware-artifacts",
+        ):
+            if candidate.is_dir():
+                return candidate
+        return meipass / "firmware-artifacts"
+    return Path(__file__).resolve().parent.parent / "firmware-artifacts"
+
+
+FIRMWARE_DIR = resolve_firmware_dir()
 
 try:
     logging.basicConfig(
@@ -116,11 +133,29 @@ def resource_path(relative_path: str) -> str:
 
 
 def app_version_string() -> str:
-    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")
-    if os.path.isfile(p):
-        with open(p, encoding="utf-8") as f:
-            return f.read().strip()
+    candidates = [
+        resource_path("VERSION"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION"),
+    ]
+    for p in candidates:
+        if os.path.isfile(p):
+            try:
+                with open(p, encoding="utf-8") as f:
+                    v = f.read().strip()
+                    if v:
+                        return v
+            except OSError:
+                pass
     return os.environ.get("VOLTWISE_VERSION", "0.3.0")
+
+
+def central_asset_hint() -> dict:
+    system = platform.system()
+    if system == "Windows":
+        return {"filename": "VoltWise-Central-Windows-x86_64.exe", "label": "Windows"}
+    if system == "Darwin":
+        return {"filename": "VoltWise-Central-macOS.dmg", "label": "macOS"}
+    return {"filename": "VoltWise-Central-Linux-x86_64", "label": "Linux"}
 
 
 def firmware_binary_version(profile: str) -> str | None:

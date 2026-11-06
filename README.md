@@ -4,50 +4,54 @@ Edge–Central architecture for multi-PDU power monitoring (ESP32 / WT32-ETH01 +
 
 Repository: [github.com/EvilMonkey09/voltwise-v2](https://github.com/EvilMonkey09/voltwise-v2)
 
-## Components
+**Full setup guide (German):** [docs/SETUP.md](docs/SETUP.md)
 
-| Path | Description |
-|------|-------------|
-| [server/](server/) | VoltWise Central — MQTT ingest, dashboard, events, web flasher |
-| [edge-firmware/](edge-firmware/) | ESP32/WT32 firmware — PZEM, MQTT, captive portal, local UI, OTA |
-| [flasher/](flasher/) | Standalone browser web flasher (esp-web-tools) |
-| [shared/ui/](shared/ui/) | Shared design system |
-| [tools/mqtt_simulator.py](tools/mqtt_simulator.py) | Dev MQTT simulator |
+## Getting started
 
-## Quick start (Central)
+1. **Install Central on your PC** — download from [Releases](https://github.com/EvilMonkey09/voltwise-v2/releases):
+   - Windows: `VoltWise-Central-Windows-x86_64.exe`
+   - macOS: `VoltWise-Central-macOS.dmg`  
+   Start the app → dashboard at http://127.0.0.1:25555 (system tray: Open Dashboard / Quit).
+2. **Flash the ESP** via `/flasher` (Chrome/Edge + USB).
+3. **Network:** Ethernet plug-and-play, or WiFi via captive portal `VoltWise-Setup-XXXX`.
+4. **Edge setup wizard** (device IP): display name → sensor profile → PZEM addresses (required once).
+5. Device appears on the Central dashboard (UDP/mDNS).
+
+Sensor profiles:
+
+- **3 sensors (L1, L2, L3 + N calculated)** — Modbus 1–3  
+- **4 sensors (L1, L2, L3, N)** — Modbus 1–4 (neutral measured)
+
+Factory reset on the edge UI re-runs the wizard (keeps `device_id`).
+
+### Alternative: Docker
 
 ```bash
 docker compose up --build
 ```
 
-- Dashboard: http://localhost:25555
-- Flasher: http://localhost:25555/flasher
-- MQTT: localhost:1883
+- Dashboard: http://localhost:25555  
+- MQTT: localhost:1883  
 
-## Flash ESP32 (browser)
+Production image: `docker compose -f docker-compose.prod.yml up -d`
 
-1. Open `/flasher` in Chrome or Edge
-2. Select board profile (WT32-ETH01 / ESP32-WROOM / Simulation)
-3. Optionally set display name and MQTT broker (written to NVS during flash)
-4. Connect USB → Flash
+### Alternative: Python tray
 
-### WiFi onboarding (captive portal)
+```bash
+cd server
+pip install -r requirements.txt
+python run_desktop.py
+```
 
-If the edge node has no Ethernet/WiFi uplink:
+## Components
 
-| Situation | Behaviour |
-|-----------|-----------|
-| Fresh flash, no WiFi saved | Hotspot after ~18 s |
-| Saved WiFi unreachable | Hotspot after ~25 s |
-| Manual | **WLAN einrichten** on edge UI (`http://<device-ip>/`) |
-
-Steps:
-
-1. Join open AP `VoltWise-Setup-XXXX`
-2. Captive portal opens (or browse `http://192.168.4.1`)
-3. Scan/select WiFi, set MQTT broker if needed
-4. AP closes after successful connection
-5. Telemetry appears on Central via MQTT
+| Path | Description |
+|------|-------------|
+| [server/](server/) | VoltWise Central — UDP/MQTT ingest, dashboard, flasher |
+| [edge-firmware/](edge-firmware/) | ESP32/WT32 — PZEM, captive WiFi, setup wizard, OTA |
+| [flasher/](flasher/) | Standalone browser flasher |
+| [docs/SETUP.md](docs/SETUP.md) | End-user setup (DE) |
+| [tools/mqtt_simulator.py](tools/mqtt_simulator.py) | Dev MQTT simulator |
 
 ## Build firmware (PlatformIO)
 
@@ -57,56 +61,31 @@ Steps:
 cd edge-firmware && pio run -e esp32dev
 ```
 
-Profiles: `esp32dev` (WiFi), `wt32-eth01` (Ethernet + WiFi), `simulation` (no hardware).
+Profiles: `esp32dev`, `wt32-eth01`, `simulation`. Artifacts: `firmware-artifacts/bin/`.
 
-Artifacts land in `firmware-artifacts/bin/` for the Central flasher.
+Desktop icons: `python tools/generate_icons.py`
 
 ## Releases & updates
 
-- **Central**: checks GitHub releases on load; banner + Settings → *Check for updates*
-- **Edge OTA**: devices poll `EvilMonkey09/voltwise-v2` releases every 6 h and install `firmware-<profile>.bin`
-- **CI**: push tag `v*` → [`.github/workflows/release.yml`](.github/workflows/release.yml) builds firmware, creates GitHub release, pushes Docker image to `ghcr.io`
+Tag `v*` → CI builds firmware, **Windows/macOS Central apps**, GitHub release assets, and pushes `ghcr.io/.../voltwise-v2`.
 
 ```bash
-git tag v0.3.1
-git push origin v0.3.1
+git tag v0.3.2
+git push origin v0.3.2
 ```
 
-Production deploy (published image):
-
-```bash
-docker compose -f docker-compose.prod.yml up -d
-```
-
-Docker image after release:
-
-```bash
-docker pull ghcr.io/evilmonkey09/voltwise-v2:latest
-```
-
-## Desktop tray (optional)
-
-```bash
-cd server
-pip install -r requirements.txt
-python run_desktop.py
-```
+Edge OTA polls the same repo for `firmware-<profile>.bin`.
 
 ## API
 
-MQTT payload: [docs/telemetry_spec.json](docs/telemetry_spec.json)
+MQTT/UDP payload: [docs/telemetry_spec.json](docs/telemetry_spec.json)
 
-Central REST highlights:
-
-- `/api/devices`, `/api/devices/<id>/telemetry`, `/api/devices/<id>/trend`
-- `/api/fleet/trend`
-- `/api/events`, `/api/flasher/manifest/<profile>`
-- `/api/app/update-status`
+REST highlights: `/api/devices`, `/api/devices/<id>/telemetry`, `/api/fleet/trend`, `/api/events`, `/api/flasher/manifest/<profile>`
 
 ## Environment
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `VOLTWISE_GITHUB_REPO` | `EvilMonkey09/voltwise-v2` | Release / OTA source |
-| `MQTT_BROKER_HOST` | `localhost` | Central MQTT broker |
+| `MQTT_BROKER_HOST` | `localhost` | Central MQTT (optional with UDP) |
 | `VOLTWISE_PORT` | `25555` | Dashboard port |

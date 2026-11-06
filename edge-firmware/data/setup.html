@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08080c">
+<title>VoltWise Setup</title>
+<link rel="stylesheet" href="/voltwise.css">
+<style>
+.vw-wiz-progress{display:flex;gap:6px;margin:12px 0 20px;flex-wrap:wrap}
+.vw-wiz-progress span{font-size:11px;padding:4px 8px;border-radius:4px;border:1px solid var(--vw-border);color:var(--vw-muted)}
+.vw-wiz-progress span.on{border-color:var(--vw-accent);color:var(--vw-accent);background:var(--vw-accent-dim)}
+.vw-wiz-progress span.done{border-color:var(--vw-success);color:var(--vw-success)}
+.vw-wiz-panel{display:none}
+.vw-wiz-panel.on{display:block}
+.vw-wiz-fig{margin:14px 0;padding:12px;background:var(--vw-surface-2);border:1px solid var(--vw-border);border-radius:var(--vw-radius)}
+.vw-wiz-fig svg{width:100%;height:auto;max-height:180px;display:block}
+.vw-wiz-fig figcaption{margin-top:8px;font-size:12px;color:var(--vw-muted)}
+.vw-wiz-choice{display:block;width:100%;text-align:left;margin:0 0 10px;padding:12px;border:1px solid var(--vw-border);border-radius:var(--vw-radius);background:var(--vw-surface-2);color:var(--vw-text);cursor:pointer}
+.vw-wiz-choice:hover,.vw-wiz-choice.picked{border-color:var(--vw-accent);background:var(--vw-accent-dim)}
+.vw-wiz-choice strong{display:block;margin-bottom:4px}
+.vw-wiz-choice span{font-size:12px;color:var(--vw-muted)}
+.vw-wiz-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.vw-wiz-warn{font-size:12px;color:var(--vw-warning);margin:8px 0}
+</style>
+</head>
+<body class="vw-portal">
+<div class="vw-portal-bg"></div>
+<div class="vw-portal-wrap">
+  <header class="vw-portal-top">
+    <div class="vw-portal-brand">
+      <span class="vw-portal-logo">VoltWise</span>
+      <span class="vw-portal-tag">Setup</span>
+    </div>
+    <span class="vw-portal-badge" id="net-badge">—</span>
+  </header>
+
+  <section class="vw-portal-hero">
+    <h1>Gerät einrichten</h1>
+    <p>Einmalig: Name, Messprofil und PZEM-Adressen. Netzwerk ist bereits erledigt.</p>
+    <div class="vw-wiz-progress" id="progress">
+      <span id="p0" class="on">1 · Gerät</span>
+      <span id="p1">2 · Profil</span>
+      <span id="p2">3 · Sensoren</span>
+      <span id="p3">4 · Fertig</span>
+    </div>
+  </section>
+
+  <!-- Step 0: Name -->
+  <section class="vw-portal-card vw-wiz-panel on" id="step-0">
+    <div class="vw-portal-card-head">
+      <div><h2>Anzeigename</h2><p>So erscheint das Gerät in Central</p></div>
+    </div>
+    <figure class="vw-wiz-fig">
+      <svg viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="20" y="25" width="90" height="50" rx="6" fill="#16161f" stroke="#22d3ee" stroke-width="2"/>
+        <text x="65" y="55" text-anchor="middle" fill="#22d3ee" font-size="14" font-family="system-ui">ESP</text>
+        <path d="M120 50 H160" stroke="#6b7280" stroke-width="2"/>
+        <rect x="170" y="20" width="130" height="60" rx="6" fill="#0f0f14" stroke="#2a2a3d" stroke-width="2"/>
+        <text x="235" y="45" text-anchor="middle" fill="#e8e8ed" font-size="12" font-family="system-ui">Central</text>
+        <text x="235" y="62" text-anchor="middle" fill="#6b7280" font-size="10" font-family="system-ui" id="fig-name">SVT-Halle-A</text>
+      </svg>
+      <figcaption>Der Name hilft, mehrere Verteiler zu unterscheiden.</figcaption>
+    </figure>
+    <label class="vw-portal-field">
+      <span>Anzeigename</span>
+      <input id="name" type="text" placeholder="z. B. SVT-Halle-A" autocomplete="off">
+    </label>
+    <div class="vw-wiz-actions">
+      <button type="button" class="vw-portal-btn primary" id="btn-name-next">Weiter</button>
+    </div>
+    <p id="name-msg" class="vw-portal-feedback"></p>
+  </section>
+
+  <!-- Step 1: Profile -->
+  <section class="vw-portal-card vw-wiz-panel" id="step-1">
+    <div class="vw-portal-card-head">
+      <div><h2>Messprofil</h2><p>Wie viele PZEM-004T hängst du an?</p></div>
+    </div>
+    <figure class="vw-wiz-fig" id="fig-profile">
+      <svg viewBox="0 0 340 140" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <text x="30" y="28" fill="#e8e8ed" font-size="12" font-family="system-ui">L1</text>
+        <text x="90" y="28" fill="#e8e8ed" font-size="12" font-family="system-ui">L2</text>
+        <text x="150" y="28" fill="#e8e8ed" font-size="12" font-family="system-ui">L3</text>
+        <text x="210" y="28" fill="#6b7280" font-size="12" font-family="system-ui">N</text>
+        <text x="270" y="28" fill="#6b7280" font-size="12" font-family="system-ui">PE</text>
+        <line x1="30" y1="40" x2="30" y2="100" stroke="#22d3ee" stroke-width="3"/>
+        <line x1="90" y1="40" x2="90" y2="100" stroke="#22d3ee" stroke-width="3"/>
+        <line x1="150" y1="40" x2="150" y2="100" stroke="#22d3ee" stroke-width="3"/>
+        <line x1="210" y1="40" x2="210" y2="100" stroke="#6b7280" stroke-width="2" stroke-dasharray="4 3"/>
+        <line x1="270" y1="40" x2="270" y2="100" stroke="#3f3f46" stroke-width="2"/>
+        <line x1="260" y1="45" x2="280" y2="95" stroke="#f87171" stroke-width="2"/>
+        <rect x="18" y="55" width="24" height="18" rx="2" fill="#16161f" stroke="#22d3ee"/>
+        <rect x="78" y="55" width="24" height="18" rx="2" fill="#16161f" stroke="#22d3ee"/>
+        <rect x="138" y="55" width="24" height="18" rx="2" fill="#16161f" stroke="#22d3ee"/>
+        <text x="170" y="128" fill="#6b7280" font-size="11" font-family="system-ui">CT auf Phasen · PE nicht messen</text>
+      </svg>
+      <figcaption id="fig-profile-cap">Wähle ein Profil — die Abbildung aktualisiert sich.</figcaption>
+    </figure>
+    <button type="button" class="vw-wiz-choice" data-profile="sensors_3" id="choice-3">
+      <strong>3 Sensoren (L1, L2, L3 + N gerechnet)</strong>
+      <span>Adressen 1–3. Nullleiterstrom wird aus den Phasenströmen berechnet.</span>
+    </button>
+    <button type="button" class="vw-wiz-choice" data-profile="sensors_4" id="choice-4">
+      <strong>4 Sensoren (L1, L2, L3, N)</strong>
+      <span>Adressen 1–4. Vierter PZEM misst den Nullleiter (CT um N).</span>
+    </button>
+    <div class="vw-wiz-actions">
+      <button type="button" class="vw-portal-btn ghost" id="btn-profile-back">Zurück</button>
+      <button type="button" class="vw-portal-btn primary" id="btn-profile-next" disabled>Weiter</button>
+    </div>
+    <p id="profile-msg" class="vw-portal-feedback"></p>
+  </section>
+
+  <!-- Step 2: Sensors -->
+  <section class="vw-portal-card vw-wiz-panel" id="step-2">
+    <div class="vw-portal-card-head">
+      <div>
+        <h2 id="sensor-title">Sensoren</h2>
+        <p id="sensor-lead">Ein Modul nach dem anderen adressieren</p>
+      </div>
+    </div>
+    <figure class="vw-wiz-fig">
+      <svg viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="20" y="30" width="70" height="50" rx="6" fill="#16161f" stroke="#22d3ee" stroke-width="2"/>
+        <text x="55" y="60" text-anchor="middle" fill="#22d3ee" font-size="12" font-family="system-ui">ESP</text>
+        <text x="55" y="95" text-anchor="middle" fill="#6b7280" font-size="9" font-family="system-ui">RX16 TX17</text>
+        <path d="M90 55 H130" stroke="#6b7280" stroke-width="2"/>
+        <rect x="140" y="25" width="80" height="60" rx="6" fill="#0f0f14" stroke="#fbbf24" stroke-width="2"/>
+        <text x="180" y="50" text-anchor="middle" fill="#fbbf24" font-size="11" font-family="system-ui">1× PZEM</text>
+        <text x="180" y="68" text-anchor="middle" fill="#e8e8ed" font-size="12" font-family="system-ui" id="fig-addr">Adr ?</text>
+        <text x="250" y="55" fill="#6b7280" font-size="11" font-family="system-ui">nur dieses</text>
+        <text x="250" y="70" fill="#6b7280" font-size="11" font-family="system-ui">Modul am Bus</text>
+      </svg>
+      <figcaption>Beim Adressieren darf nur <strong>ein</strong> PZEM am UART hängen.</figcaption>
+    </figure>
+    <p class="vw-wiz-warn">Starkstromspannungsfrei arbeiten. CT-Richtung zur Last.</p>
+    <p id="sensor-step-text" class="vw-muted vw-edge-hint"></p>
+    <div class="vw-wiz-actions">
+      <button type="button" class="vw-portal-btn primary" id="btn-set-addr">Adresse setzen</button>
+      <button type="button" class="vw-portal-btn ghost" id="btn-sensor-scan">Bus prüfen</button>
+    </div>
+    <p id="sensor-msg" class="vw-portal-feedback"></p>
+    <div class="vw-wiz-actions">
+      <button type="button" class="vw-portal-btn ghost" id="btn-sensor-back">Zurück</button>
+      <button type="button" class="vw-portal-btn primary" id="btn-sensor-next" disabled>Weiter</button>
+    </div>
+  </section>
+
+  <!-- Step 3: Done -->
+  <section class="vw-portal-card vw-wiz-panel" id="step-3">
+    <div class="vw-portal-card-head">
+      <div><h2>Fertig</h2><p>Setup abgeschlossen</p></div>
+    </div>
+    <figure class="vw-wiz-fig">
+      <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="100" cy="50" r="32" fill="#16161f" stroke="#4ade80" stroke-width="3"/>
+        <path d="M82 50 L95 63 L120 38" fill="none" stroke="#4ade80" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <figcaption id="done-summary">—</figcaption>
+    </figure>
+    <div class="vw-wiz-actions">
+      <button type="button" class="vw-portal-btn primary" id="btn-finish">Setup abschließen</button>
+    </div>
+    <p id="done-msg" class="vw-portal-feedback"></p>
+  </section>
+
+  <footer class="vw-portal-foot">VoltWise Edge · Setup nur einmal nötig · Werkseinstellungen unter Einstellungen</footer>
+</div>
+<script>
+const LABELS = {1:'L1',2:'L2',3:'L3',4:'N'};
+let step = 0;
+let profile = 'sensors_3';
+let addrIndex = 0; // index into expected addresses
+let expected = [1,2,3];
+
+function setFeedback(id, text, kind) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text || '';
+  el.className = 'vw-portal-feedback' + (kind ? ' ' + kind : '');
+}
+
+function showStep(n) {
+  step = n;
+  document.querySelectorAll('.vw-wiz-panel').forEach((el, i) => {
+    el.classList.toggle('on', i === n);
+  });
+  for (let i = 0; i < 4; i++) {
+    const p = document.getElementById('p' + i);
+    p.classList.remove('on', 'done');
+    if (i < n) p.classList.add('done');
+    if (i === n) p.classList.add('on');
+  }
+  if (n === 2) updateSensorStep();
+  if (n === 3) {
+    const name = document.getElementById('name').value.trim() || '(ohne Name)';
+    const pl = profile === 'sensors_4'
+      ? '4 Sensoren (L1, L2, L3, N)'
+      : '3 Sensoren (L1, L2, L3 + N gerechnet)';
+    document.getElementById('done-summary').textContent = name + ' · ' + pl;
+  }
+}
+
+function updateSensorStep() {
+  const addr = expected[addrIndex];
+  const label = LABELS[addr] || ('Adr ' + addr);
+  document.getElementById('sensor-title').textContent = 'Sensor ' + (addrIndex + 1) + ' / ' + expected.length + ' · ' + label;
+  document.getElementById('sensor-lead').textContent = 'Nur den ' + label + '-PZEM an den UART hängen, dann Adresse ' + addr + ' setzen.';
+  document.getElementById('sensor-step-text').textContent =
+    'Zieladresse ' + addr + ' (' + label + '). Danach Modul abklemmen und nächstes anschließen.';
+  document.getElementById('fig-addr').textContent = 'Adr ' + addr;
+  document.getElementById('btn-set-addr').textContent = 'Adresse ' + addr + ' setzen';
+  document.getElementById('btn-sensor-next').disabled = true;
+  setFeedback('sensor-msg', '');
+}
+
+async function refreshNetBadge() {
+  try {
+    const r = await fetch('/api/setup/status');
+    const d = await r.json();
+    const b = document.getElementById('net-badge');
+    if (d.has_uplink) {
+      b.textContent = (d.network_type || 'online') + ' · ' + (d.ip || '');
+      b.className = 'vw-portal-badge vw-portal-badge-ok';
+    } else {
+      b.textContent = 'Kein Uplink';
+      b.className = 'vw-portal-badge';
+    }
+  } catch (e) {}
+}
+
+document.getElementById('name').addEventListener('input', (e) => {
+  document.getElementById('fig-name').textContent = e.target.value.trim() || 'SVT-Halle-A';
+});
+
+document.getElementById('btn-name-next').onclick = async () => {
+  const name = document.getElementById('name').value.trim();
+  setFeedback('name-msg', 'Speichere…');
+  await fetch('/api/settings', {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ device_name: name })
+  });
+  setFeedback('name-msg', '', 'ok');
+  showStep(1);
+};
+
+document.querySelectorAll('[data-profile]').forEach(btn => {
+  btn.onclick = () => {
+    profile = btn.getAttribute('data-profile');
+    document.querySelectorAll('[data-profile]').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    document.getElementById('btn-profile-next').disabled = false;
+    const cap = document.getElementById('fig-profile-cap');
+    if (profile === 'sensors_4') {
+      cap.textContent = '4 Sensoren: CT auch um N (Adresse 4). PE weiterhin nicht.';
+    } else {
+      cap.textContent = '3 Sensoren: N-Strom wird gerechnet. PE nicht messen.';
+    }
+  };
+});
+
+document.getElementById('btn-profile-back').onclick = () => showStep(0);
+document.getElementById('btn-profile-next').onclick = async () => {
+  setFeedback('profile-msg', 'Speichere Profil…');
+  await fetch('/api/settings', {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ sensor_profile: profile })
+  });
+  expected = profile === 'sensors_4' ? [1,2,3,4] : [1,2,3];
+  addrIndex = 0;
+  setFeedback('profile-msg', '');
+  showStep(2);
+};
+
+document.getElementById('btn-sensor-back').onclick = () => {
+  if (addrIndex > 0) {
+    addrIndex--;
+    updateSensorStep();
+  } else showStep(1);
+};
+
+document.getElementById('btn-set-addr').onclick = async () => {
+  const addr = expected[addrIndex];
+  const btn = document.getElementById('btn-set-addr');
+  btn.disabled = true;
+  setFeedback('sensor-msg', 'Setze Adresse ' + addr + '…');
+  try {
+    const r = await fetch('/api/pzem/set-address', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ address: addr })
+    });
+    const d = await r.json();
+    if (d.ok && d.verified) {
+      setFeedback('sensor-msg', 'Adresse ' + addr + ' gesetzt und geprüft.', 'ok');
+      document.getElementById('btn-sensor-next').disabled = false;
+    } else if (d.ok) {
+      setFeedback('sensor-msg', 'Befehl gesendet — bitte „Bus prüfen“.', 'ok');
+      document.getElementById('btn-sensor-next').disabled = false;
+    } else {
+      setFeedback('sensor-msg', 'Fehlgeschlagen. Nur ein Modul anschließen, 5 V/UART prüfen.');
+    }
+  } catch (e) {
+    setFeedback('sensor-msg', 'Anfrage fehlgeschlagen.');
+  }
+  btn.disabled = false;
+};
+
+document.getElementById('btn-sensor-scan').onclick = async () => {
+  setFeedback('sensor-msg', 'Prüfe Bus…');
+  const r = await fetch('/api/pzem/status?refresh=1');
+  const d = await r.json();
+  const found = (d.found || []).map(f => f.address);
+  const need = expected[addrIndex];
+  if (found.includes(need)) {
+    setFeedback('sensor-msg', 'Adresse ' + need + ' antwortet.', 'ok');
+    document.getElementById('btn-sensor-next').disabled = false;
+  } else {
+    setFeedback('sensor-msg', 'Adresse ' + need + ' nicht gefunden. Gefunden: ' + (found.join(', ') || '—'));
+  }
+};
+
+document.getElementById('btn-sensor-next').onclick = async () => {
+  if (addrIndex < expected.length - 1) {
+    addrIndex++;
+    updateSensorStep();
+    return;
+  }
+  // Final full check
+  setFeedback('sensor-msg', 'Alle Module parallel anschließen und prüfen…');
+  const r = await fetch('/api/pzem/scan', { method: 'POST' });
+  const d = await r.json();
+  if (d.ok) {
+    setFeedback('sensor-msg', 'Alle erwarteten Adressen gefunden.', 'ok');
+    showStep(3);
+  } else {
+    const found = (d.found || []).map(f => f.address).join(', ') || '—';
+    setFeedback('sensor-msg', 'Noch unvollständig. Gefunden: ' + found + '. Alle Sensoren parallel anschließen und erneut „Weiter“.');
+  }
+};
+
+document.getElementById('btn-finish').onclick = async () => {
+  setFeedback('done-msg', 'Schließe ab…');
+  const r = await fetch('/api/setup/complete', { method: 'POST' });
+  const d = await r.json();
+  if (d.ok) {
+    setFeedback('done-msg', 'Fertig — weiter zum Dashboard…', 'ok');
+    setTimeout(() => { location.href = '/'; }, 800);
+  } else {
+    setFeedback('done-msg', 'PZEM noch unvollständig — zurück zu den Sensoren.');
+    showStep(2);
+  }
+};
+
+(async () => {
+  refreshNetBadge();
+  setInterval(refreshNetBadge, 5000);
+  try {
+    const r = await fetch('/api/settings');
+    const d = await r.json();
+    if (d.device_name) {
+      document.getElementById('name').value = d.device_name;
+      document.getElementById('fig-name').textContent = d.device_name;
+    }
+    if (d.sensor_profile === 'sensors_3' || d.sensor_profile === 'sensors_4') {
+      profile = d.sensor_profile;
+      const btn = document.querySelector('[data-profile="' + profile + '"]');
+      if (btn) btn.classList.add('picked');
+      document.getElementById('btn-profile-next').disabled = false;
+      expected = profile === 'sensors_4' ? [1,2,3,4] : [1,2,3];
+    }
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
