@@ -14,8 +14,13 @@
 .vw-wiz-panel{display:none}
 .vw-wiz-panel.on{display:block}
 .vw-wiz-fig{margin:14px 0;padding:12px;background:var(--vw-surface-2);border:1px solid var(--vw-border);border-radius:var(--vw-radius)}
-.vw-wiz-fig svg{width:100%;height:auto;max-height:180px;display:block}
+.vw-wiz-fig svg{width:100%;height:auto;max-height:260px;display:block}
 .vw-wiz-fig figcaption{margin-top:8px;font-size:12px;color:var(--vw-muted)}
+.vw-wiz-pins{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0 0}
+.vw-wiz-pins th,.vw-wiz-pins td{padding:6px 8px;border:1px solid var(--vw-border);text-align:left}
+.vw-wiz-pins th{color:var(--vw-muted);font-weight:600;background:var(--vw-surface)}
+.vw-wiz-pins td{font-family:var(--vw-mono),ui-monospace,monospace;color:var(--vw-text)}
+.vw-wiz-pins .x{color:var(--vw-accent)}
 .vw-wiz-choice{display:block;width:100%;text-align:left;margin:0 0 10px;padding:12px;border:1px solid var(--vw-border);border-radius:var(--vw-radius);background:var(--vw-surface-2);color:var(--vw-text);cursor:pointer}
 .vw-wiz-choice:hover,.vw-wiz-choice.picked{border-color:var(--vw-accent);background:var(--vw-accent-dim)}
 .vw-wiz-choice strong{display:block;margin-bottom:4px}
@@ -121,20 +126,56 @@
       </div>
     </div>
     <figure class="vw-wiz-fig">
-      <svg viewBox="0 0 340 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect x="20" y="30" width="70" height="50" rx="6" fill="#16161f" stroke="#22d3ee" stroke-width="2"/>
-        <text x="55" y="60" text-anchor="middle" fill="#22d3ee" font-size="12" font-family="system-ui">ESP</text>
-        <text x="55" y="95" text-anchor="middle" fill="#6b7280" font-size="9" font-family="system-ui">RX16 TX17</text>
-        <path d="M90 55 H130" stroke="#6b7280" stroke-width="2"/>
-        <rect x="140" y="25" width="80" height="60" rx="6" fill="#0f0f14" stroke="#fbbf24" stroke-width="2"/>
-        <text x="180" y="50" text-anchor="middle" fill="#fbbf24" font-size="11" font-family="system-ui">1× PZEM</text>
-        <text x="180" y="68" text-anchor="middle" fill="#e8e8ed" font-size="12" font-family="system-ui" id="fig-addr">Adr ?</text>
-        <text x="250" y="55" fill="#6b7280" font-size="11" font-family="system-ui">nur dieses</text>
-        <text x="250" y="70" fill="#6b7280" font-size="11" font-family="system-ui">Modul am Bus</text>
+      <svg viewBox="0 0 360 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- ESP box -->
+        <rect x="16" y="28" width="110" height="150" rx="8" fill="#16161f" stroke="#22d3ee" stroke-width="2"/>
+        <text x="71" y="52" text-anchor="middle" fill="#22d3ee" font-size="13" font-family="system-ui" font-weight="600">ESP32</text>
+        <text x="71" y="68" text-anchor="middle" fill="#6b7280" font-size="9" font-family="system-ui">/ WT32-ETH01</text>
+        <!-- ESP pins -->
+        <circle cx="118" cy="95" r="4" fill="#22d3ee"/>
+        <text x="108" y="99" text-anchor="end" fill="#e8e8ed" font-size="10" font-family="ui-monospace,monospace">GPIO16 RX</text>
+        <circle cx="118" cy="120" r="4" fill="#22d3ee"/>
+        <text x="108" y="124" text-anchor="end" fill="#e8e8ed" font-size="10" font-family="ui-monospace,monospace">GPIO17 TX</text>
+        <circle cx="118" cy="145" r="4" fill="#a1a1aa"/>
+        <text x="108" y="149" text-anchor="end" fill="#e8e8ed" font-size="10" font-family="ui-monospace,monospace">GND</text>
+        <circle cx="118" cy="170" r="4" fill="#f87171"/>
+        <text x="108" y="174" text-anchor="end" fill="#e8e8ed" font-size="10" font-family="ui-monospace,monospace">5V</text>
+
+        <!-- PZEM box -->
+        <rect x="234" y="28" width="110" height="150" rx="8" fill="#0f0f14" stroke="#fbbf24" stroke-width="2"/>
+        <text x="289" y="52" text-anchor="middle" fill="#fbbf24" font-size="13" font-family="system-ui" font-weight="600">PZEM-004T</text>
+        <text x="289" y="68" text-anchor="middle" fill="#e8e8ed" font-size="11" font-family="system-ui" id="fig-addr">Adr ?</text>
+        <circle cx="242" cy="95" r="4" fill="#fbbf24"/>
+        <text x="252" y="99" fill="#e8e8ed" font-size="10" font-family="ui-monospace,monospace">TX</text>
+        <circle cx="242" cy="120" r="4" fill="#fbbf24"/>
+        <text x="252" y="124" fill="#e8e8ed" font-size="10" font-family="ui-monospace,monospace">RX</text>
+        <circle cx="242" cy="145" r="4" fill="#a1a1aa"/>
+        <text x="252" y="149" fill="#e8e8ed" font-size="10" font-family="ui-monospace,monospace">GND</text>
+        <circle cx="242" cy="170" r="4" fill="#f87171"/>
+        <text x="252" y="174" fill="#e8e8ed" font-size="10" font-family="ui-monospace,monospace">5V</text>
+
+        <!-- Crossed UART: ESP RX ← PZEM TX, ESP TX → PZEM RX -->
+        <path d="M122 95 C165 95, 195 120, 238 120" fill="none" stroke="#22d3ee" stroke-width="2"/>
+        <path d="M122 120 C165 120, 195 95, 238 95" fill="none" stroke="#67e8f9" stroke-width="2"/>
+        <path d="M122 145 H238" stroke="#a1a1aa" stroke-width="2"/>
+        <path d="M122 170 H238" stroke="#f87171" stroke-width="2"/>
+        <text x="180" y="82" text-anchor="middle" fill="#6b7280" font-size="9" font-family="system-ui">RX↔TX gekreuzt</text>
+        <text x="180" y="208" text-anchor="middle" fill="#6b7280" font-size="10" font-family="system-ui">Beim Adressieren: nur dieses eine Modul am Bus</text>
       </svg>
-      <figcaption>Beim Adressieren darf nur <strong>ein</strong> PZEM am UART hängen.</figcaption>
+      <figcaption>TTL/UART am PZEM (nicht die Starkstrom-Klemmen). TX/RX immer gekreuzt.</figcaption>
+      <table class="vw-wiz-pins" aria-label="Pinbelegung ESP zu PZEM">
+        <thead>
+          <tr><th>ESP</th><th></th><th>PZEM-004T</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>GPIO <span class="x">16</span> (RX)</td><td class="x">←</td><td>TX</td></tr>
+          <tr><td>GPIO <span class="x">17</span> (TX)</td><td class="x">→</td><td>RX</td></tr>
+          <tr><td>GND</td><td>—</td><td>GND</td></tr>
+          <tr><td>5 V</td><td>—</td><td>5 V</td></tr>
+        </tbody>
+      </table>
     </figure>
-    <p class="vw-wiz-warn">Starkstromspannungsfrei arbeiten. CT-Richtung zur Last.</p>
+    <p class="vw-wiz-warn">Starkstromspannungsfrei arbeiten. CT-Richtung zur Last. Bei 5‑V-TTL ggf. Level-Shifter zum ESP (3,3 V).</p>
     <p id="sensor-step-text" class="vw-muted vw-edge-hint"></p>
     <div class="vw-wiz-actions">
       <button type="button" class="vw-portal-btn primary" id="btn-set-addr">Adresse setzen</button>
